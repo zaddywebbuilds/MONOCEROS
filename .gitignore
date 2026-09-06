@@ -34,3 +34,6 @@ yarn-error.log*
 *.tsbuildinfo
 .idea/
 .vscode/
+
+# Zero-install preview database (development only)
+.preview-db/

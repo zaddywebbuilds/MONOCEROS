@@ -18,7 +18,8 @@
     "admin:create": "tsx --tsconfig tsconfig.scripts.json scripts/create-admin.ts",
     "jobs:run": "tsx --tsconfig tsconfig.scripts.json scripts/run-jobs.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "preview:db": "tsx --tsconfig tsconfig.scripts.json scripts/preview-db.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
@@ -44,6 +45,8 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^26.4.1",

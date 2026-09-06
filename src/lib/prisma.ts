@@ -20,8 +20,15 @@ function createClient(): PrismaClient {
     );
   }
 
+  // Connection pool ceiling. Useful for serverless platforms and for managed
+  // databases with a low connection limit; left to the driver default when unset.
+  const poolMax = Number(process.env.DATABASE_POOL_MAX);
+
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaPg({
+      connectionString,
+      ...(Number.isFinite(poolMax) && poolMax > 0 ? { max: poolMax } : {}),
+    }),
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 }

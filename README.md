@@ -80,6 +80,40 @@ npm run dev
 
 Open <http://localhost:3000>. The back office is at `/admin/login`.
 
+### No PostgreSQL to hand?
+
+A zero-install preview database ships with the project. It runs PGlite
+(PostgreSQL compiled to WebAssembly) behind a real Postgres wire-protocol
+listener, so Prisma connects to it exactly as it would to a normal server.
+
+```bash
+npm run preview:db     # terminal 1 — leave running
+```
+
+Then set these two lines in `.env` and continue as above:
+
+```
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres
+DATABASE_POOL_MAX=1
+```
+
+```bash
+npx prisma migrate deploy && npm run db:seed && npm run db:seed:demo
+npm run admin:create
+npm run dev            # terminal 2
+```
+
+This is for local previews and demos only — it is a devDependency and its data
+lives in the git-ignored `./.preview-db`. `DATABASE_POOL_MAX=1` matters: PGlite
+multiplexes the Postgres wire protocol through one WASM instance and mis-binds
+prepared statements when queries interleave, so the pool must serialise them.
+Production uses a normal PostgreSQL server and needs no pool cap.
+
+> **This application cannot run on GitHub Pages, Netlify's static hosting, or
+> any static file host.** It needs a Node.js server process and a PostgreSQL
+> database. Deploy it to Vercel, Render, Railway, Fly.io or your own Node host —
+> see [Deployment](#deployment).
+
 Generate the two secrets with:
 
 ```bash
