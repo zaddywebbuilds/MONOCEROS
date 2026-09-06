@@ -1,0 +1,61 @@
+import type { Metadata } from "next";
+
+import { Hero } from "@/components/marketing/hero";
+import { MarketTicker } from "@/components/marketing/market-ticker";
+import { PackagesSection } from "@/components/marketing/packages-section";
+import { HowItWorks } from "@/components/marketing/how-it-works";
+import { CycleSection } from "@/components/marketing/cycle-section";
+import {
+  AboutPreview,
+  FaqSection,
+  InfrastructureSection,
+  SupportSection,
+  WhyMonoceros,
+} from "@/components/marketing/sections";
+import { getMarketSnapshot } from "@/lib/market";
+import { getPublicSettings } from "@/lib/settings";
+import { getSession } from "@/lib/auth/session";
+import { getNextCycleStart, getPublicFaqs, getPublicPackages } from "@/server/queries/public";
+import { appUrl } from "@/lib/env";
+import type { Weekday } from "@/lib/time";
+
+export const metadata: Metadata = {
+  title: "Automated Market Intelligence, Structured Investment Management",
+  description:
+    "Monoceros manages investment subscriptions powered by an externally operated automated trading infrastructure: verified accounts, weekly investment cycles and clear 30-day terms.",
+  alternates: { canonical: `${appUrl}/` },
+};
+
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const [settings, session, packages, faqs, market] = await Promise.all([
+    getPublicSettings(),
+    getSession().catch(() => null),
+    getPublicPackages(),
+    getPublicFaqs(),
+    getMarketSnapshot(),
+  ]);
+
+  const cycleStart = await getNextCycleStart();
+
+  return (
+    <>
+      <Hero settings={settings} />
+      <MarketTicker snapshot={market} />
+      <PackagesSection packages={packages} user={session?.user ?? null} />
+      <HowItWorks videoUrl={settings["content.explainerVideoUrl"] || undefined} />
+      <CycleSection
+        cycleStart={cycleStart}
+        weekday={settings["cycle.weekday"] as Weekday}
+        time={settings["cycle.time"]}
+        durationDays={settings["investment.durationDays"]}
+      />
+      <InfrastructureSection />
+      <WhyMonoceros />
+      <SupportSection settings={settings} />
+      <FaqSection faqs={faqs} limit={6} showAllLink />
+      <AboutPreview settings={settings} />
+    </>
+  );
+}

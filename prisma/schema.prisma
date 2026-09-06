@@ -1,0 +1,672 @@
+// Monoceros — investment subscription management platform
+// All monetary values use Decimal (never floating point).
+// All timestamps are stored in UTC; business timezone is Africa/Lagos.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  USER
+  SUPPORT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum KycStatus {
+  NOT_SUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+  RESUBMIT_REQUESTED
+}
+
+enum IdDocumentType {
+  NIN_SLIP
+  NATIONAL_ID
+  INTERNATIONAL_PASSPORT
+  DRIVERS_LICENCE
+  VOTERS_CARD
+}
+
+enum InvestmentStatus {
+  DRAFT
+  PAYMENT_PENDING
+  PAYMENT_SUBMITTED
+  PAYMENT_UNDER_REVIEW
+  PAYMENT_REJECTED
+  QUEUED
+  ACTIVE
+  MATURED
+  ROLLED_OVER
+  WITHDRAWAL_REQUESTED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum CycleStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  PROCESSING
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+enum WithdrawalMethod {
+  USDT_WALLET
+  BANK_TRANSFER
+}
+
+enum TransactionType {
+  DEPOSIT_SUBMITTED
+  DEPOSIT_APPROVED
+  DEPOSIT_REJECTED
+  INVESTMENT_ACTIVATED
+  INVESTMENT_MATURED
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_PAID
+  WITHDRAWAL_REJECTED
+  ROLLOVER_CREATED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_USER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  GENERAL
+  ACCOUNT
+  KYC
+  PAYMENT
+  WITHDRAWAL
+  TECHNICAL
+  OTHER
+}
+
+enum RolloverMode {
+  SAME_PACKAGE_PERCENTAGE
+  REQUIRE_PACKAGE_SELECTION
+}
+
+// ---------------------------------------------------------------------------
+// Identity and access
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String     @id @default(cuid())
+  reference       String     @unique
+  email           String     @unique
+  passwordHash    String
+  role            Role       @default(USER)
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  kycStatus       KycStatus  @default(NOT_SUBMITTED)
+
+  // Brute-force protection
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  // 2FA architecture (ready; enforcement is an admin setting)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+
+  passwordChangedAt DateTime?
+  lastLoginAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile        UserProfile?
+  adminProfile   AdminProfile?
+  sessions       Session[]
+  kycSubmissions KycSubmission[]
+  investments    Investment[]
+  payments       Payment[]
+  withdrawals    Withdrawal[]
+  rollovers      Rollover[]
+  transactions   Transaction[]
+  notifications  Notification[]
+  tickets        SupportTicket[]
+  ticketMessages SupportMessage[]
+  loginEvents    LoginEvent[]
+  auditLogs      AuditLog[]              @relation("AuditActor")
+  emailTokens    EmailVerificationToken[]
+  resetTokens    PasswordResetToken[]
+  walletChanges  WalletChangeLog[]
+
+  @@index([role])
+  @@index([status])
+  @@index([kycStatus])
+  @@index([createdAt])
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  firstName   String
+  surname     String
+  otherName   String?
+  dateOfBirth DateTime
+  phone       String
+  country     String   @default("Nigeria")
+
+  // Saved withdrawal destination (changes are logged and emailed)
+  withdrawalWalletAddress String?
+  withdrawalWalletNetwork String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  displayName       String
+  jobTitle          String?
+  requiresTwoFactor Boolean   @default(true)
+  lastLoginIp       String?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  ipAddress    String?
+  userAgent    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  lastActiveAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  success   Boolean
+  reason    String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// KYC
+// ---------------------------------------------------------------------------
+
+model KycSubmission {
+  id              String         @id @default(cuid())
+  reference       String         @unique
+  userId          String
+  nin             String?
+  idType          IdDocumentType
+  idNumber        String?
+  documentKey     String
+  documentMime    String
+  documentSize    Int
+  status          KycStatus      @default(PENDING)
+  rejectionReason String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  submittedAt     DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Packages and investments
+// ---------------------------------------------------------------------------
+
+model Package {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  minimumCapital   Decimal  @db.Decimal(18, 6)
+  returnPercentage Decimal  @db.Decimal(8, 4)
+  maturityAmount   Decimal  @db.Decimal(18, 6)
+  durationDays     Int      @default(30)
+  description      String
+  badge            String?
+  displayOrder     Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  investments Investment[]
+
+  @@index([isActive, displayOrder])
+}
+
+model InvestmentCycle {
+  id          String      @id @default(cuid())
+  reference   String      @unique
+  cycleStart  DateTime    @unique
+  cycleEnd    DateTime
+  status      CycleStatus @default(UPCOMING)
+  activatedAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  investments Investment[]
+
+  @@index([status])
+  @@index([cycleStart])
+}
+
+model Investment {
+  id                       String           @id @default(cuid())
+  reference                String           @unique
+  userId                   String
+  packageId                String?
+  packageNameSnapshot      String
+  principalAmount          Decimal          @db.Decimal(18, 6)
+  returnPercentageSnapshot Decimal          @db.Decimal(8, 4)
+  maturityAmount           Decimal          @db.Decimal(18, 6)
+  durationDays             Int
+  status                   InvestmentStatus @default(DRAFT)
+  cycleId                  String?
+  parentInvestmentId       String?          @unique
+
+  queuedAt  DateTime?
+  startedAt DateTime?
+  maturesAt DateTime?
+  maturedAt DateTime?
+  closedAt  DateTime?
+
+  adminNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package          Package?         @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  cycle            InvestmentCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  parentInvestment Investment?      @relation("InvestmentChain", fields: [parentInvestmentId], references: [id], onDelete: SetNull)
+  childInvestment  Investment?      @relation("InvestmentChain")
+
+  payments     Payment[]
+  withdrawals  Withdrawal[]
+  transactions Transaction[]
+  rolloverFrom Rollover[]              @relation("RolloverSource")
+  rolloverTo   Rollover[]              @relation("RolloverTarget")
+  statusEvents InvestmentStatusEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([cycleId])
+  @@index([maturesAt])
+}
+
+model InvestmentStatusEvent {
+  id           String            @id @default(cuid())
+  investmentId String
+  fromStatus   InvestmentStatus?
+  toStatus     InvestmentStatus
+  reason       String?
+  actorId      String?
+  createdAt    DateTime          @default(now())
+
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([investmentId])
+}
+
+// ---------------------------------------------------------------------------
+// Payments
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id              String        @id @default(cuid())
+  reference       String        @unique
+  userId          String
+  investmentId    String
+  asset           String        @default("USDT")
+  network         String
+  walletAddress   String
+  expectedAmount  Decimal       @db.Decimal(18, 6)
+  submittedAmount Decimal?      @db.Decimal(18, 6)
+  transactionHash String?       @unique
+  proofKey        String?
+  proofMime       String?
+  status          PaymentStatus @default(PENDING)
+  submittedAt     DateTime?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([investmentId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Withdrawals and rollovers
+// ---------------------------------------------------------------------------
+
+model Withdrawal {
+  id            String           @id @default(cuid())
+  reference     String           @unique
+  userId        String
+  investmentId  String
+  amount        Decimal          @db.Decimal(18, 6)
+  method        WithdrawalMethod @default(USDT_WALLET)
+  walletAddress String?
+  walletNetwork String?
+  bankDetails   Json?
+  status        WithdrawalStatus @default(PENDING)
+
+  requestedAt     DateTime  @default(now())
+  processedById   String?
+  processedAt     DateTime?
+  paymentTxid     String?
+  rejectionReason String?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Rollover {
+  id                 String       @id @default(cuid())
+  reference          String       @unique
+  userId             String
+  sourceInvestmentId String       @unique
+  newInvestmentId    String       @unique
+  rolledAmount       Decimal      @db.Decimal(18, 6)
+  appliedPercentage  Decimal      @db.Decimal(8, 4)
+  mode               RolloverMode
+  createdAt          DateTime     @default(now())
+
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceInvestment Investment @relation("RolloverSource", fields: [sourceInvestmentId], references: [id], onDelete: Cascade)
+  newInvestment    Investment @relation("RolloverTarget", fields: [newInvestmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WalletChangeLog {
+  id         String   @id @default(cuid())
+  userId     String
+  oldAddress String?
+  oldNetwork String?
+  newAddress String
+  newNetwork String
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Ledger, notifications, support
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id           String            @id @default(cuid())
+  reference    String            @unique
+  userId       String
+  investmentId String?
+  type         TransactionType
+  status       TransactionStatus @default(COMPLETED)
+  amount       Decimal           @db.Decimal(18, 6)
+  currency     String            @default("USD")
+  description  String
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  reference   String         @unique
+  userId      String
+  subject     String
+  category    TicketCategory @default(GENERAL)
+  priority    TicketPriority @default(NORMAL)
+  status      TicketStatus   @default(OPEN)
+  lastReplyAt DateTime       @default(now())
+  closedAt    DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages SupportMessage[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  authorId  String?
+  isStaff   Boolean  @default(false)
+  body      String
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+}
+
+// ---------------------------------------------------------------------------
+// Content and configuration
+// ---------------------------------------------------------------------------
+
+model Faq {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  category     String   @default("General")
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+model SiteSetting {
+  key         String   @id
+  value       Json
+  group       String   @default("general")
+  label       String
+  description String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([group])
+}
+
+model ContentBlock {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  body      String
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String?
+  actorRole  Role?
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  reason     String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Atomic sequence source for human-readable references (MON-INV-2026-000024)
+model ReferenceCounter {
+  id      String @id @default(cuid())
+  prefix  String
+  year    Int
+  current Int    @default(0)
+
+  @@unique([prefix, year])
+}
