@@ -23,9 +23,9 @@ export function LogoMark({ className, id = "logo" }: { className?: string; id?: 
           <stop offset="100%" stopColor="#050a12" />
         </linearGradient>
         <linearGradient id={`${id}-stroke`} x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0ba883" />
-          <stop offset="55%" stopColor="#2fd4a7" />
-          <stop offset="100%" stopColor="#dcb96f" />
+          <stop offset="0%" stopColor="#a87a2f" />
+          <stop offset="55%" stopColor="#d9ae5c" />
+          <stop offset="100%" stopColor="#d9ae5c" />
         </linearGradient>
       </defs>
 
@@ -51,7 +51,7 @@ export function LogoMark({ className, id = "logo" }: { className?: string; id?: 
       {/* The horn */}
       <path
         d="M25.5 15.5 L30 10 L30.5 16"
-        stroke="#dcb96f"
+        stroke="#d9ae5c"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -59,10 +59,10 @@ export function LogoMark({ className, id = "logo" }: { className?: string; id?: 
       />
 
       {/* Stars */}
-      <circle cx="10" cy="28.5" r="2.1" fill="#0b111e" stroke="#2fd4a7" strokeWidth="1.5" />
-      <circle cx="16.5" cy="20.5" r="1.7" fill="#2fd4a7" />
-      <circle cx="23" cy="24.5" r="1.7" fill="#12c99b" />
-      <circle cx="30" cy="10" r="2.4" fill="#0b111e" stroke="#dcb96f" strokeWidth="1.6" />
+      <circle cx="10" cy="28.5" r="2.1" fill="#0b111e" stroke="#d9ae5c" strokeWidth="1.5" />
+      <circle cx="16.5" cy="20.5" r="1.7" fill="#d9ae5c" />
+      <circle cx="23" cy="24.5" r="1.7" fill="#c9963f" />
+      <circle cx="30" cy="10" r="2.4" fill="#0b111e" stroke="#d9ae5c" strokeWidth="1.6" />
     </svg>
   );
 }

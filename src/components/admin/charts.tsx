@@ -29,7 +29,7 @@ export interface SeriesPoint {
 const AXIS = { fill: "#64748b", fontSize: 11 };
 const GRID = "#17223a";
 
-const CATEGORICAL = ["#12c99b", "#4d94f0", "#dcb96f", "#9df0d5", "#7c8aa5", "#0a8368"];
+const CATEGORICAL = ["#c9963f", "#4d94f0", "#12c99b", "#e6c987", "#7c8aa5", "#a87a2f"];
 
 function EmptyChart({ message }: { message: string }) {
   return (
@@ -73,8 +73,8 @@ export function SubscriptionsChart({ data }: { data: SeriesPoint[] }) {
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
         <defs>
           <linearGradient id="subs-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#12c99b" stopOpacity={0.32} />
-            <stop offset="100%" stopColor="#12c99b" stopOpacity={0} />
+            <stop offset="0%" stopColor="#c9963f" stopOpacity={0.32} />
+            <stop offset="100%" stopColor="#c9963f" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
@@ -84,7 +84,7 @@ export function SubscriptionsChart({ data }: { data: SeriesPoint[] }) {
         <Area
           type="monotone"
           dataKey="value"
-          stroke="#12c99b"
+          stroke="#c9963f"
           strokeWidth={2}
           fill="url(#subs-fill)"
         />

@@ -2,7 +2,7 @@
 
 /* ==========================================================================
    Monoceros design tokens
-   Deep navy ground, sophisticated emerald/teal primary, restrained gold.
+   Deep navy ground, gold primary, emerald reserved for semantic status.
    ========================================================================== */
 
 @theme {
@@ -17,23 +17,33 @@
   --color-ink-600: #1f2c48;
   --color-ink-500: #2b3a5c;
 
-  /* Primary — emerald / teal */
-  --color-accent-50: #ecfdf7;
-  --color-accent-200: #9df0d5;
-  --color-accent-300: #5fe4bf;
-  --color-accent-400: #2fd4a7;
-  --color-accent-500: #12c99b;
-  --color-accent-600: #0ba883;
-  --color-accent-700: #0a8368;
-  --color-accent-800: #08624f;
-  --color-accent-900: #06463a;
+  /* Primary — gold. The brand accent: CTAs, headings, highlights. */
+  --color-accent-50: #fdf8ec;
+  --color-accent-200: #f2e0b4;
+  --color-accent-300: #e6c987;
+  --color-accent-400: #d9ae5c;
+  --color-accent-500: #c9963f;
+  --color-accent-600: #a87a2f;
+  --color-accent-700: #855f25;
+  --color-accent-800: #63471d;
+  --color-accent-900: #463218;
 
-  /* Secondary — restrained gold */
-  --color-gold-200: #f6e7bf;
-  --color-gold-300: #ecd39a;
-  --color-gold-400: #dcb96f;
-  --color-gold-500: #c69f52;
-  --color-gold-600: #a3813c;
+  /* Kept aligned with the primary so existing gold-* usages harmonise. */
+  --color-gold-200: #f2e0b4;
+  --color-gold-300: #e6c987;
+  --color-gold-400: #d9ae5c;
+  --color-gold-500: #c9963f;
+  --color-gold-600: #a87a2f;
+
+  /* Semantic green — market gains and active investments ONLY.
+     Never decorative: green here means "up" or "live", nothing else. */
+  --color-emerald-200: #9df0d5;
+  --color-emerald-300: #5fe4bf;
+  --color-emerald-400: #2fd4a7;
+  --color-emerald-500: #12c99b;
+  --color-emerald-600: #0ba883;
+  --color-emerald-700: #0a8368;
+  --color-emerald-900: #06463a;
 
   /* Typography */
   --color-fg: #e9eef6;

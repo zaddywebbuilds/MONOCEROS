@@ -17,9 +17,9 @@ const shared = {
   ink: "#0b111e",
   inkDeep: "#060a12",
   line: "#1f2c48",
-  accent: "#12c99b",
-  accentSoft: "#2fd4a7",
-  gold: "#dcb96f",
+  accent: "#c9963f",
+  accentSoft: "#d9ae5c",
+  gold: "#d9ae5c",
   muted: "#7c8aa5",
 };
 
@@ -73,18 +73,18 @@ export function HeroVisual({ className }: { className?: string }) {
     >
       <defs>
         <radialGradient id="hero-core" cx="50%" cy="45%" r="60%">
-          <stop offset="0%" stopColor="#2fd4a7" stopOpacity="0.95" />
-          <stop offset="55%" stopColor="#0ba883" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="#06463a" stopOpacity="0" />
+          <stop offset="0%" stopColor="#d9ae5c" stopOpacity="0.95" />
+          <stop offset="55%" stopColor="#a87a2f" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#463218" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="hero-panel" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#0e1525" />
           <stop offset="100%" stopColor="#060a12" />
         </linearGradient>
         <linearGradient id="hero-sweep" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#12c99b" stopOpacity="0" />
-          <stop offset="50%" stopColor="#2fd4a7" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#dcb96f" stopOpacity="0" />
+          <stop offset="0%" stopColor="#c9963f" stopOpacity="0" />
+          <stop offset="50%" stopColor="#d9ae5c" stopOpacity="0.85" />
+          <stop offset="100%" stopColor="#d9ae5c" stopOpacity="0" />
         </linearGradient>
         <filter id="hero-blur" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur stdDeviation="18" />
@@ -252,8 +252,8 @@ export function AiInfrastructureVisual({ className }: { className?: string }) {
           <stop offset="100%" stopColor="#060a12" />
         </linearGradient>
         <linearGradient id="ai-core" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0ba883" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#06463a" stopOpacity="0.1" />
+          <stop offset="0%" stopColor="#a87a2f" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#463218" stopOpacity="0.1" />
         </linearGradient>
       </defs>
 
@@ -367,8 +367,8 @@ export function MarketsVisual({ className }: { className?: string }) {
           <stop offset="100%" stopColor="#060a12" />
         </linearGradient>
         <radialGradient id="mk-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#12c99b" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#12c99b" stopOpacity="0" />
+          <stop offset="0%" stopColor="#c9963f" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#c9963f" stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -465,9 +465,9 @@ export function WorkflowVisual({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="wf-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0ba883" />
-          <stop offset="70%" stopColor="#2fd4a7" />
-          <stop offset="100%" stopColor="#dcb96f" />
+          <stop offset="0%" stopColor="#a87a2f" />
+          <stop offset="70%" stopColor="#d9ae5c" />
+          <stop offset="100%" stopColor="#d9ae5c" />
         </linearGradient>
       </defs>
 
@@ -484,7 +484,7 @@ export function WorkflowVisual({ className }: { className?: string }) {
       <path d={path} stroke="url(#wf-line)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
       <path
         d={path}
-        stroke="#9df0d5"
+        stroke="#f2e0b4"
         strokeWidth="2.6"
         strokeLinecap="round"
         fill="none"
@@ -526,8 +526,8 @@ export function SecurityVisual({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="sec-shield" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0ba883" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#06463a" stopOpacity="0.05" />
+          <stop offset="0%" stopColor="#a87a2f" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#463218" stopOpacity="0.05" />
         </linearGradient>
       </defs>
 
@@ -621,9 +621,9 @@ export function CycleVisual({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="cyc-arc" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0ba883" />
-          <stop offset="60%" stopColor="#2fd4a7" />
-          <stop offset="100%" stopColor="#dcb96f" />
+          <stop offset="0%" stopColor="#a87a2f" />
+          <stop offset="60%" stopColor="#d9ae5c" />
+          <stop offset="100%" stopColor="#d9ae5c" />
         </linearGradient>
       </defs>
 
@@ -754,8 +754,8 @@ export function BrandVisual({ className }: { className?: string }) {
           <stop offset="100%" stopColor="#05080f" />
         </radialGradient>
         <linearGradient id="brand-link" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0ba883" />
-          <stop offset="100%" stopColor="#dcb96f" />
+          <stop offset="0%" stopColor="#a87a2f" />
+          <stop offset="100%" stopColor="#d9ae5c" />
         </linearGradient>
       </defs>
 
@@ -816,7 +816,7 @@ export function BrandVisual({ className }: { className?: string }) {
             cx={star.x}
             cy={star.y}
             r={star.r}
-            fill={star.bright ? "#ffffff" : "#9df0d5"}
+            fill={star.bright ? "#ffffff" : "#f2e0b4"}
             className="animate-shimmer"
             style={{ animationDelay: `${index * 0.45}s` }}
           />

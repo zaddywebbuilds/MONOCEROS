@@ -154,7 +154,7 @@ export default async function MarketsPage() {
                             <TD
                               className={cn(
                                 "text-right tabular-nums",
-                                positive ? "text-accent-400" : "text-status-rejected",
+                                positive ? "text-emerald-400" : "text-status-rejected",
                               )}
                             >
                               {formatChange(asset.change24h)}

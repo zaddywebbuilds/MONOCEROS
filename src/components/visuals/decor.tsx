@@ -107,7 +107,7 @@ export function Particles({ className }: { className?: string }) {
           cx={p.x}
           cy={p.y}
           r={p.r / 6}
-          fill={index % 3 === 0 ? "#dcb96f" : "#2fd4a7"}
+          fill={index % 3 === 0 ? "#d9ae5c" : "#d9ae5c"}
           opacity="0.5"
           className="animate-shimmer"
           style={{ animationDelay: `${p.d}s` }}
@@ -129,14 +129,14 @@ export function MarketLine({ className }: { className?: string }) {
     >
       <defs>
         <linearGradient id="market-line-stroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0ba883" stopOpacity="0" />
-          <stop offset="18%" stopColor="#12c99b" stopOpacity="0.9" />
-          <stop offset="82%" stopColor="#2fd4a7" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#dcb96f" stopOpacity="0" />
+          <stop offset="0%" stopColor="#a87a2f" stopOpacity="0" />
+          <stop offset="18%" stopColor="#c9963f" stopOpacity="0.9" />
+          <stop offset="82%" stopColor="#d9ae5c" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#d9ae5c" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="market-line-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#12c99b" stopOpacity="0.16" />
-          <stop offset="100%" stopColor="#12c99b" stopOpacity="0" />
+          <stop offset="0%" stopColor="#c9963f" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#c9963f" stopOpacity="0" />
         </linearGradient>
       </defs>
 
@@ -154,7 +154,7 @@ export function MarketLine({ className }: { className?: string }) {
       <path
         d="M0 118 C 48 108, 74 128, 108 112 S 168 66, 208 84 S 268 128, 306 96 S 372 34, 414 58 S 470 96, 512 62 S 566 28, 600 40"
         fill="none"
-        stroke="#5fe4bf"
+        stroke="#e6c987"
         strokeWidth="1.5"
         strokeDasharray="8 460"
         className="animate-dash"
@@ -179,7 +179,7 @@ export function AbstractChart({ className }: { className?: string }) {
   return (
     <svg aria-hidden viewBox="0 0 200 100" fill="none" className={cn("w-full", className)}>
       {candles.map((candle) => {
-        const colour = candle.up ? "#2fd4a7" : "#7c8aa5";
+        const colour = candle.up ? "#d9ae5c" : "#7c8aa5";
         const top = Math.min(candle.o, candle.c);
         const height = Math.max(Math.abs(candle.c - candle.o), 2);
         return (
@@ -242,7 +242,7 @@ export function NetworkNodes({ className }: { className?: string }) {
           return <line key={`${from}-${to}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
         })}
       </g>
-      <g stroke="#12c99b" strokeWidth="0.7" opacity="0.75">
+      <g stroke="#c9963f" strokeWidth="0.7" opacity="0.75">
         {edges.slice(0, 4).map(([from, to], index) => {
           const a = byId.get(from);
           const b = byId.get(to);
@@ -268,14 +268,14 @@ export function NetworkNodes({ className }: { className?: string }) {
             cy={node.y}
             r="3.4"
             fill="#0b111e"
-            stroke={index % 3 === 0 ? "#dcb96f" : "#2fd4a7"}
+            stroke={index % 3 === 0 ? "#d9ae5c" : "#d9ae5c"}
             strokeWidth="1"
           />
           <circle
             cx={node.x}
             cy={node.y}
             r="1.3"
-            fill={index % 3 === 0 ? "#dcb96f" : "#2fd4a7"}
+            fill={index % 3 === 0 ? "#d9ae5c" : "#d9ae5c"}
             className="animate-shimmer"
             style={{ animationDelay: `${index * 0.35}s` }}
           />

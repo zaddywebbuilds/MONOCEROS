@@ -53,7 +53,7 @@ function TickerItem({ asset }: { asset: MarketAsset }) {
         <p
           className={cn(
             "flex items-center justify-end gap-1 text-[11.5px] font-medium tabular-nums",
-            positive ? "text-accent-400" : "text-status-rejected",
+            positive ? "text-emerald-400" : "text-status-rejected",
           )}
         >
           <Icon className="size-3" aria-hidden />
