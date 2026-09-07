@@ -21,7 +21,7 @@ Monoceros manages **customers, identity verification, subscriptions, payments, w
 - [Document storage](#document-storage)
 - [Market data](#market-data)
 - [Testing](#testing)
-- [Deployment](#deployment)  ·  [step-by-step Render guide](docs/DEPLOY-RENDER.md)
+- [Deployment](#deployment)  ·  [free demo](docs/DEPLOY-FREE.md)  ·  [production on Render](docs/DEPLOY-RENDER.md)
 - [Project structure](#project-structure)
 - [Business rules](#business-rules)
 - [Security](#security)
@@ -328,6 +328,13 @@ The most important assertion, stated directly:
 This application needs a **Node.js server process** and a **PostgreSQL
 database**. It cannot run on GitHub Pages, Netlify's static hosting, or any
 other static file host.
+
+### Free demo — showing it to someone
+
+Vercel Hobby + Neon, both free, neither asks for a card. About 15 minutes to a
+real URL: **[docs/DEPLOY-FREE.md](docs/DEPLOY-FREE.md)**. Good enough to demo
+the whole product; not suitable for live customers (uploads do not persist and
+Vercel Hobby is non-commercial).
 
 ### Render (recommended) — one provider, no S3 required
 

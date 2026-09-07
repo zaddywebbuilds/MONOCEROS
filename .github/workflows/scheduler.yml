@@ -1,0 +1,44 @@
+name: Investment cycle scheduler
+
+# Runs the cycle/maturity engine on a free GitHub Actions schedule.
+#
+# Vercel's Hobby plan only allows one cron run per day, which is too infrequent
+# for the Friday engine. This costs nothing and runs every 15 minutes.
+#
+# Set two repository secrets (Settings -> Secrets and variables -> Actions):
+#   APP_URL      https://your-project.vercel.app
+#   CRON_SECRET  the same value you set in the Vercel environment variables
+#
+# GitHub pauses schedules on repositories with no activity for 60 days; push a
+# commit to resume. The engine is idempotent, so a missed run only delays
+# activation — nothing is ever corrupted or double-processed.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the scheduled worker
+        run: |
+          if [ -z "${{ secrets.APP_URL }}" ] || [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "APP_URL or CRON_SECRET is not set — add them as repository secrets."
+            exit 1
+          fi
+
+          response=$(curl -sS -w "\n%{http_code}" -X POST \
+            "${{ secrets.APP_URL }}/api/cron/run" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          body=$(echo "$response" | sed '$d')
+          status=$(echo "$response" | tail -n1)
+
+          echo "$body"
+
+          if [ "$status" != "200" ]; then
+            echo "Scheduler returned HTTP $status"
+            exit 1
+          fi
