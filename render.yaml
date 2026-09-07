@@ -1,0 +1,135 @@
+# Render blueprint for Monoceros.
+#
+# Creates everything the platform needs in one project:
+#   - a Node web service (the application)
+#   - a managed PostgreSQL database
+#   - a persistent disk for KYC documents and payment proofs
+#   - a cron worker that opens investment cycles and matures investments
+#
+# Deploy with: Render Dashboard -> New -> Blueprint -> point at this repository.
+# Then fill in the variables marked `sync: false` (Render will prompt for them).
+#
+# Region note: `frankfurt` is Render's closest region to Nigeria. Change it in
+# all three places below if you prefer somewhere else.
+
+databases:
+  - name: monoceros-db
+    databaseName: monoceros
+    user: monoceros
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+
+services:
+  # ---------------------------------------------------------------------------
+  # The application
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: monoceros
+    runtime: node
+    region: frankfurt
+    plan: starter
+    branch: main
+    autoDeploy: true
+
+    buildCommand: npm ci && npm run build
+    # Migrations run on every deploy, before the server accepts traffic.
+    startCommand: npx prisma migrate deploy && npm run start
+
+    healthCheckPath: /api/health
+
+    # Persistent storage. This is why no S3 bucket is required: identity
+    # documents written here survive deploys and restarts.
+    disk:
+      name: monoceros-documents
+      mountPath: /var/data
+      sizeGB: 5
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: monoceros-db
+          property: connectionString
+
+      # Generated once by Render and never shown in the repository.
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+
+      # Private document storage on the mounted disk.
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_DIR
+        value: /var/data/private-storage
+
+      # Your public URL. Set this to your custom domain once it is attached,
+      # e.g. https://monoceros.ng — it is used in emails and canonical links.
+      # NEXT_PUBLIC_APP_URL is read at BUILD time, so changing it needs a redeploy.
+      - key: APP_URL
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: NEXT_PUBLIC_SITE_NAME
+        value: Monoceros
+
+      # Email. Start with `console` to go live without a provider (messages are
+      # written to the Render log), then switch to `resend` and add the key.
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+      # Optional CoinGecko key. Leave blank to use the free public tier.
+      - key: COINGECKO_API_KEY
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # The scheduled worker
+  # ---------------------------------------------------------------------------
+  # Opens investment cycles, activates queued investments, matures investments
+  # whose term has elapsed, and prunes expired tokens and sessions.
+  #
+  # It talks to the database directly rather than calling the HTTP endpoint, so
+  # it keeps working even if the web service is restarting. It is idempotent —
+  # running it more often than necessary does nothing extra.
+  - type: cron
+    name: monoceros-scheduler
+    runtime: node
+    region: frankfurt
+    plan: starter
+    branch: main
+    schedule: "*/5 * * * *"
+
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npm run jobs:run
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: monoceros-db
+          property: connectionString
+      - key: AUTH_SECRET
+        fromService:
+          type: web
+          name: monoceros
+          envVarKey: AUTH_SECRET
+      - key: APP_URL
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: console
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_DIR
+        value: /tmp/monoceros-storage

@@ -21,7 +21,7 @@ Monoceros manages **customers, identity verification, subscriptions, payments, w
 - [Document storage](#document-storage)
 - [Market data](#market-data)
 - [Testing](#testing)
-- [Deployment](#deployment)
+- [Deployment](#deployment)  ·  [step-by-step Render guide](docs/DEPLOY-RENDER.md)
 - [Project structure](#project-structure)
 - [Business rules](#business-rules)
 - [Security](#security)
@@ -108,6 +108,10 @@ lives in the git-ignored `./.preview-db`. `DATABASE_POOL_MAX=1` matters: PGlite
 multiplexes the Postgres wire protocol through one WASM instance and mis-binds
 prepared statements when queries interleave, so the pool must serialise them.
 Production uses a normal PostgreSQL server and needs no pool cap.
+
+If the preview database ever refuses to start (usually after the process was
+killed rather than stopped with Ctrl+C), delete `.preview-db` and re-run the
+migrate/seed commands above. It holds nothing you cannot recreate in a minute.
 
 > **This application cannot run on GitHub Pages, Netlify's static hosting, or
 > any static file host.** It needs a Node.js server process and a PostgreSQL
@@ -321,15 +325,38 @@ The most important assertion, stated directly:
 
 ## Deployment
 
-### Vercel + managed PostgreSQL
+This application needs a **Node.js server process** and a **PostgreSQL
+database**. It cannot run on GitHub Pages, Netlify's static hosting, or any
+other static file host.
 
-1. Push the repository and import it into Vercel.
-2. Set every variable from `.env.example` in the project settings.
-3. Set `STORAGE_DRIVER=s3` and the S3 credentials (the Vercel filesystem is ephemeral).
-4. Add the cron entry shown in [Scheduled jobs](#scheduled-jobs).
-5. Run `npx prisma migrate deploy` and `npm run db:seed` against the production database.
-6. Run `npm run admin:create`.
-7. Sign in at `/admin/login` and set the payment network and wallet address.
+### Render (recommended) — one provider, no S3 required
+
+`render.yaml` in the repository is a complete blueprint: web service, PostgreSQL
+database, persistent disk and the scheduled worker. Because the disk survives
+deploys, identity documents can stay on `STORAGE_DRIVER=local` and no object
+storage account is needed.
+
+Render Dashboard → **New → Blueprint** → point it at this repository, then
+follow **[docs/DEPLOY-RENDER.md](docs/DEPLOY-RENDER.md)** — a step-by-step guide
+covering seeding, creating the two administrators, setting the payment wallet,
+attaching a domain and switching on real email. Around $15/month.
+
+### Vercel + a managed database
+
+Also works, with two things to know first: Vercel's Hobby tier prohibits
+commercial use, and its Hobby cron jobs run only once per day, which is too
+infrequent for the cycle engine. Budget for Pro, or drive `/api/cron/run` from
+an external scheduler.
+
+1. Import the repository into Vercel.
+2. Set every variable from `.env.example`.
+3. Add a PostgreSQL database (Neon, Supabase or any provider) and set `DATABASE_URL`.
+4. Set `STORAGE_DRIVER=s3` with S3-compatible storage — Cloudflare R2, Supabase
+   Storage or AWS S3. **This is required:** Vercel's filesystem is wiped on every
+   deploy, so uploaded identity documents would be lost.
+5. Add the cron entry from [Scheduled jobs](#scheduled-jobs).
+6. Follow steps 3 onwards of the Render guide for seeding, administrators and
+   payment settings — they are identical.
 
 ### Any Node host
 
@@ -351,7 +378,7 @@ Serve behind TLS. Session cookies are `Secure` whenever `NODE_ENV=production`, a
 - [ ] Legal pages reviewed; no registration or licence number published unless genuinely held
 - [ ] Scheduled job running and visible in the logs
 - [ ] Email provider configured and a test message received
-- [ ] `STORAGE_DRIVER=s3` with a **private** bucket
+- [ ] Document storage persists across deploys (Render disk, or `STORAGE_DRIVER=s3` with a **private** bucket)
 - [ ] Demo data absent (`npm run db:seed:demo` must never be run in production)
 
 ---

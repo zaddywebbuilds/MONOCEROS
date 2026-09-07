@@ -19,7 +19,26 @@ import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 const PORT = Number(process.env.PREVIEW_DB_PORT ?? 5432);
 const DATA_DIR = process.env.PREVIEW_DB_DIR ?? "./.preview-db";
 
+/**
+ * Clears the lock left behind when a previous run was killed rather than shut
+ * down. PGlite is single-process, so a stale postmaster.pid can only ever be
+ * from a dead instance — unlike a real Postgres server, there is nothing this
+ * could be racing against.
+ */
+async function clearStaleLock() {
+  const { rm } = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  try {
+    await rm(path.join(DATA_DIR, "postmaster.pid"), { force: true });
+  } catch {
+    // Nothing to clear.
+  }
+}
+
 async function main() {
+  await clearStaleLock();
+
   const db = await PGlite.create({ dataDir: DATA_DIR });
   await db.waitReady;
 
