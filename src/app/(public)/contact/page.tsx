@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 
 import { PageHeader } from "@/components/marketing/prose";
 import { ContactForm } from "@/components/marketing/contact-form";
@@ -40,6 +40,12 @@ export default async function ContactPage() {
       icon: MapPin,
       label: "Address",
       value: settings["company.address"],
+    },
+    settings["social.telegram"] && {
+      icon: Send,
+      label: "Telegram",
+      value: "Join our Telegram group",
+      href: settings["social.telegram"],
     },
     {
       icon: Clock,
