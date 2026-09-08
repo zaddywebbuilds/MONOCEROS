@@ -16,7 +16,7 @@ import { CycleVisual } from "@/components/visuals/illustrations";
 import { requireApprovedKyc } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/prisma";
 import { formatUSD } from "@/lib/money";
-import { getSettings, paymentConfigured } from "@/lib/settings";
+import { configuredWallets, getSettings } from "@/lib/settings";
 import { upcomingCycleStart } from "@/server/services/cycles";
 import { formatCycleLabel } from "@/lib/time";
 
@@ -38,7 +38,8 @@ export default async function PackageConfirmPage({
 
   if (!pkg || !pkg.isActive) notFound();
 
-  const paymentsReady = paymentConfigured(settings);
+  const wallets = configuredWallets(settings);
+  const paymentsReady = wallets.length > 0;
   const profit = pkg.maturityAmount.sub(pkg.minimumCapital);
 
   return (
@@ -123,8 +124,15 @@ export default async function PackageConfirmPage({
             </p>
             <p className="mt-1 text-[12.5px] text-fg-muted">
               in {settings["payment.asset"]}
-              {settings["payment.network"] ? ` on ${settings["payment.network"]}` : ""}
+              {wallets.length > 0
+                ? ` on ${wallets.map((wallet) => wallet.label).join(", ")}`
+                : ""}
             </p>
+            {wallets.length > 1 ? (
+              <p className="mt-1.5 text-[12px] text-fg-subtle">
+                You choose your network on the next screen.
+              </p>
+            ) : null}
 
             <div className="mt-5 border-t border-ink-700/60 pt-4">
               <SubscribeForm

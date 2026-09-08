@@ -10,9 +10,13 @@ import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import {
+  DEPOSIT_NETWORKS,
+  DEPOSIT_NETWORK_LABEL,
   SETTING_DEFAULTS,
   SETTING_KEYS,
   SETTING_META,
+  depositWalletKey,
+  type DepositNetwork,
   type SettingKey,
   type SettingValue,
   type SettingsMap,
@@ -76,15 +80,43 @@ export async function setSetting<K extends SettingKey>(
   });
 }
 
-/** Payment details are only shown once an admin has configured both fields. */
+export interface DepositWallet {
+  network: DepositNetwork;
+  label: string;
+  address: string;
+}
+
+/**
+ * The networks investors may actually pay on: those with an address saved.
+ *
+ * Returned in registry order so the first entry is a stable default.
+ */
+export function configuredWallets(settings: SettingsMap): DepositWallet[] {
+  return DEPOSIT_NETWORKS.map((network) => ({
+    network,
+    label: DEPOSIT_NETWORK_LABEL[network],
+    address: String(settings[depositWalletKey(network)] ?? "").trim(),
+  })).filter((wallet) => wallet.address.length > 0);
+}
+
+/** Looks up a single network's address, or null when it is not offered. */
+export function walletFor(settings: SettingsMap, network: string): DepositWallet | null {
+  return configuredWallets(settings).find((wallet) => wallet.network === network) ?? null;
+}
+
+/** Payment details are only shown once at least one wallet address is set. */
 export function paymentConfigured(settings: SettingsMap): boolean {
-  return Boolean(settings["payment.network"]) && Boolean(settings["payment.walletAddress"]);
+  return configuredWallets(settings).length > 0;
 }
 
 export {
+  DEPOSIT_NETWORKS,
+  DEPOSIT_NETWORK_LABEL,
   SETTING_DEFAULTS,
   SETTING_KEYS,
   SETTING_META,
+  depositWalletKey,
+  type DepositNetwork,
   type SettingKey,
   type SettingValue,
   type SettingsMap,

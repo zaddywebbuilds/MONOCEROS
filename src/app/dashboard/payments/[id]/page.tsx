@@ -14,10 +14,11 @@ import { StatusPill } from "@/components/ui/badge";
 import { CopyButton } from "@/components/ui/interactive";
 import { InfoNote } from "@/components/ui/feedback";
 import { PaymentSubmissionForm } from "@/components/dashboard/payment-form";
+import { NetworkSelector } from "@/components/dashboard/network-selector";
 import { InvestmentTimeline } from "@/components/dashboard/investment-timeline";
 import { requireApprovedKyc } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/prisma";
-import { getSettings, paymentConfigured } from "@/lib/settings";
+import { configuredWallets, getSettings, walletFor } from "@/lib/settings";
 import { walletQrDataUrl } from "@/lib/qr";
 import { formatAsset, formatUSD } from "@/lib/money";
 import { formatBusinessDateTime } from "@/lib/time";
@@ -45,11 +46,17 @@ export default async function PaymentPage({ params }: { params: Promise<{ id: st
   if (!payment) notFound();
 
   const settings = await getSettings();
-  const configured = paymentConfigured(settings);
-  const walletAddress = settings["payment.walletAddress"];
-  const network = settings["payment.network"];
+  const wallets = configuredWallets(settings);
+  const configured = wallets.length > 0;
   const asset = settings["payment.asset"];
-  const qr = configured ? await walletQrDataUrl(walletAddress) : null;
+
+  // The payment stores the network the investor chose. Fall back to the first
+  // configured wallet if an admin has since removed that network's address,
+  // so the page never shows an address that is no longer being monitored.
+  const activeWallet = walletFor(settings, payment.network) ?? wallets[0] ?? null;
+  const walletAddress = activeWallet?.address ?? "";
+  const networkLabel = activeWallet?.label ?? payment.network;
+  const qr = activeWallet ? await walletQrDataUrl(activeWallet.address) : null;
 
   const canSubmit = ["PAYMENT_PENDING", "PAYMENT_REJECTED"].includes(investment.status);
   const expectedAmount = payment.expectedAmount.toFixed(2);
@@ -98,7 +105,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ id: st
               <dl className="mt-4 border-t border-ink-700/60 pt-2">
                 <DetailRow label="Asset">{asset}</DetailRow>
                 <DetailRow label="Network">
-                  <span className="text-accent-300">{network}</span>
+                  <span className="text-accent-300">{networkLabel}</span>
                 </DetailRow>
                 <DetailRow label="Amount">
                   {formatAsset(payment.expectedAmount, asset)}
@@ -107,6 +114,17 @@ export default async function PaymentPage({ params }: { params: Promise<{ id: st
                   <span className="font-mono text-[11.5px]">{payment.reference}</span>
                 </DetailRow>
               </dl>
+
+              {payment.status === "PENDING" ? (
+                <NetworkSelector
+                  investmentId={investment.id}
+                  wallets={wallets.map((wallet) => ({
+                    network: wallet.network,
+                    label: wallet.label,
+                  }))}
+                  selected={activeWallet?.network ?? ""}
+                />
+              ) : null}
 
               <div className="mt-5">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-fg-subtle">
@@ -146,8 +164,8 @@ export default async function PaymentPage({ params }: { params: Promise<{ id: st
                 />
                 <p className="text-[12.5px] leading-relaxed text-status-rejected">
                   Send only <strong className="font-semibold">{asset}</strong> using the{" "}
-                  <strong className="font-semibold">{network}</strong> network. Sending another
-                  asset, or using another network, may result in permanent loss.
+                  <strong className="font-semibold">{networkLabel}</strong> network. Sending
+                  another asset, or using another network, may result in permanent loss.
                 </p>
               </div>
             </Card>

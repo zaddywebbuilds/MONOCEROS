@@ -587,15 +587,14 @@ export async function saveSettingsAction(
         actor: admin,
         action: AUDIT_ACTION.WALLET_ADDRESS_UPDATED,
         entityType: "SiteSetting",
-        entityId: "payment.walletAddress",
-        newValue: {
-          network: changes["payment.network"] as string,
-          walletAddress: changes["payment.walletAddress"] as string,
-        },
+        entityId: "payment.wallets",
+        newValue: Object.fromEntries(
+          Object.entries(changes).filter(([key]) => key.startsWith("payment.wallet.")),
+        ) as never,
       });
       await notifyStaff({
         title: "Payment settings changed",
-        message: "The company wallet address or network was updated. Verify it before approving payments.",
+        message: "A company wallet address was updated. Verify it before approving payments.",
         type: "WARNING",
         link: "/admin/settings",
       });

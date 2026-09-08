@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { assertApprovedKyc, assertUser } from "@/lib/auth/rbac";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
+import { getSettings, walletFor } from "@/lib/settings";
 import {
   paymentSubmissionSchema,
   rolloverRequestSchema,
@@ -53,6 +54,49 @@ export async function subscribeAction(
 
   revalidatePath("/dashboard/investments");
   redirect(`/dashboard/payments/${investmentId}`);
+}
+
+/**
+ * Switches which network an unpaid subscription is to be paid on.
+ *
+ * The address is resolved from settings on the server — the client sends only
+ * a network code, never an address, so a tampered form cannot redirect funds.
+ */
+export async function choosePaymentNetworkAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const investmentId = String(formData.get("investmentId") ?? "");
+  const network = String(formData.get("network") ?? "");
+  if (!investmentId || !network) return errorState("Missing payment or network reference.");
+
+  try {
+    const user = await assertApprovedKyc();
+
+    const settings = await getSettings();
+    const wallet = walletFor(settings, network);
+    if (!wallet) return errorState("That network is not available for deposits.");
+
+    const payment = await prisma.payment.findFirst({
+      where: { investmentId, userId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!payment) return errorState("Payment not found.");
+    if (payment.status !== "PENDING") {
+      return errorState("This payment has already been submitted, so its network cannot change.");
+    }
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { network: wallet.network, walletAddress: wallet.address },
+    });
+  } catch (error) {
+    if (isFrameworkError(error)) throw error;
+    return toErrorState(error);
+  }
+
+  revalidatePath(`/dashboard/payments/${investmentId}`);
+  return successState(`Showing the ${network} deposit address.`);
 }
 
 export async function submitPaymentAction(

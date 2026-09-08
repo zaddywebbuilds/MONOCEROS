@@ -117,8 +117,7 @@ describeIfDb("investment workflow", () => {
 
     // Payment settings must exist or subscriptions are refused by design.
     const { setSetting } = await import("@/lib/settings");
-    await setSetting("payment.network", "TRC20");
-    await setSetting("payment.walletAddress", "TTestWalletAddressForIntegrationTests");
+    await setSetting("payment.wallet.TRC20", "TTestWalletAddressForIntegrationTests");
   });
 
   async function createInvestor(email = "investor@test.invalid") {

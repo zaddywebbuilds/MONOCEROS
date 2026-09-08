@@ -43,9 +43,16 @@ export const SETTING_DEFAULTS = {
 
   // --- Payments ------------------------------------------------------------
   "payment.asset": "USDT",
-  /** Intentionally blank: the network must be confirmed and set by an admin. */
-  "payment.network": "",
-  "payment.walletAddress": "",
+  /**
+   * One receiving address per deposit network. All are intentionally blank:
+   * every address must be confirmed and entered by an admin. Investors may
+   * only pay on a network whose address is set here.
+   */
+  "payment.wallet.TRC20": "",
+  "payment.wallet.BEP20": "",
+  "payment.wallet.ERC20": "",
+  "payment.wallet.POLYGON": "",
+  "payment.wallet.SOLANA": "",
   "payment.instructions":
     "Send the exact amount shown using the displayed network only. After sending, submit your transaction hash so the finance team can verify the transfer.",
   "payment.minConfirmations": 1,
@@ -144,12 +151,31 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
   "content.heroSubheadline": { group: "content", label: "Hero supporting copy" },
   "content.explainerVideoUrl": { group: "content", label: "Explainer video URL" },
   "payment.asset": { group: "payments", label: "Payment asset" },
-  "payment.network": {
+  "payment.wallet.TRC20": {
     group: "payments",
-    label: "Payment network",
-    description: "Must be confirmed before the payment page will display wallet details.",
+    label: "TRC-20 (Tron) receiving address",
+    description: "Leave blank to hide this network from investors. Starts with T, 34 characters.",
   },
-  "payment.walletAddress": { group: "payments", label: "Company USDT wallet address" },
+  "payment.wallet.BEP20": {
+    group: "payments",
+    label: "BEP-20 (BNB Smart Chain) receiving address",
+    description: "Leave blank to hide this network from investors. Starts with 0x, 42 characters.",
+  },
+  "payment.wallet.ERC20": {
+    group: "payments",
+    label: "ERC-20 (Ethereum) receiving address",
+    description: "Leave blank to hide this network from investors. Starts with 0x, 42 characters.",
+  },
+  "payment.wallet.POLYGON": {
+    group: "payments",
+    label: "Polygon receiving address",
+    description: "Leave blank to hide this network from investors. Starts with 0x, 42 characters.",
+  },
+  "payment.wallet.SOLANA": {
+    group: "payments",
+    label: "Solana receiving address",
+    description: "Leave blank to hide this network from investors.",
+  },
   "payment.instructions": { group: "payments", label: "Payment instructions" },
   "payment.minConfirmations": { group: "payments", label: "Minimum confirmations" },
   "payment.allowedNetworks": { group: "payments", label: "Selectable networks" },
@@ -183,3 +209,30 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
 };
 
 export const SETTING_KEYS = Object.keys(SETTING_DEFAULTS) as SettingKey[];
+
+// ---------------------------------------------------------------------------
+// Deposit networks
+// ---------------------------------------------------------------------------
+
+/**
+ * Networks an investor may deposit on, in the order they are offered.
+ *
+ * A network is only actually offered when its `payment.wallet.<NETWORK>`
+ * address is set, so this list is the menu, not the availability.
+ */
+export const DEPOSIT_NETWORKS = ["TRC20", "BEP20", "ERC20", "POLYGON", "SOLANA"] as const;
+
+export type DepositNetwork = (typeof DEPOSIT_NETWORKS)[number];
+
+/** Investor-facing names — the bare codes are ambiguous to non-technical users. */
+export const DEPOSIT_NETWORK_LABEL: Record<DepositNetwork, string> = {
+  TRC20: "TRC-20 (Tron)",
+  BEP20: "BEP-20 (BNB Smart Chain)",
+  ERC20: "ERC-20 (Ethereum)",
+  POLYGON: "Polygon",
+  SOLANA: "Solana",
+};
+
+export function depositWalletKey(network: DepositNetwork): SettingKey {
+  return `payment.wallet.${network}` as SettingKey;
+}

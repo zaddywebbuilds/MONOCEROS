@@ -103,8 +103,10 @@ export async function submitPayment(input: SubmitPaymentInput): Promise<{ refere
           status: "SUBMITTED",
           submittedAt: new Date(),
           rejectionReason: null,
-          network: settings["payment.network"] || payment.network,
-          walletAddress: settings["payment.walletAddress"] || payment.walletAddress,
+          // network/walletAddress are deliberately left untouched: they record
+          // the network the investor chose and the address they were actually
+          // shown. Overwriting them from current settings would misrepresent
+          // where the funds were sent.
         },
       });
 

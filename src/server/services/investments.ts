@@ -5,7 +5,7 @@ import type { Investment, InvestmentStatus, Prisma } from "@prisma/client";
 import { prisma, type Tx } from "@/lib/prisma";
 import { nextReference } from "@/lib/references";
 import { applyReturn, formatUSD, money } from "@/lib/money";
-import { getSettings, paymentConfigured } from "@/lib/settings";
+import { configuredWallets, getSettings } from "@/lib/settings";
 import { formatBusinessDate, formatCycleLabel, maturityFor } from "@/lib/time";
 import { canTransition, InvalidTransitionError, OPEN_INVESTMENT_STATUSES } from "@/lib/domain/investment-status";
 import { notify, notifications, notifyStaff } from "@/lib/notifications";
@@ -84,7 +84,8 @@ export async function createSubscription(
 ): Promise<SubscribeResult> {
   const settings = await getSettings();
 
-  if (!paymentConfigured(settings)) {
+  const [defaultWallet] = configuredWallets(settings);
+  if (!defaultWallet) {
     throw new BusinessRuleError(
       "Subscriptions are temporarily unavailable: payment details have not been configured. Please contact support.",
     );
@@ -133,8 +134,10 @@ export async function createSubscription(
         userId,
         investmentId: investment.id,
         asset: settings["payment.asset"],
-        network: settings["payment.network"],
-        walletAddress: settings["payment.walletAddress"],
+        // A provisional default; the investor picks their network on the
+        // payment screen, which rewrites both fields before they send funds.
+        network: defaultWallet.network,
+        walletAddress: defaultWallet.address,
         expectedAmount: principal,
         status: "PENDING",
       },
