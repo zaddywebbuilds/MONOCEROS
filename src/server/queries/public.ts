@@ -76,6 +76,27 @@ export const getPublicFaqs = cache(async (): Promise<PublicFaq[]> => {
   }
 });
 
+export interface PublicTestimonial {
+  id: string;
+  name: string;
+  location: string | null;
+  content: string;
+  receiptImageUrl: string | null;
+  featured: boolean;
+}
+
+export const getPublicTestimonials = cache(async (): Promise<PublicTestimonial[]> => {
+  try {
+    return await prisma.testimonial.findMany({
+      where: { published: true },
+      orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }],
+      select: { id: true, name: true, location: true, content: true, receiptImageUrl: true, featured: true },
+    });
+  } catch {
+    return [];
+  }
+});
+
 export const getContentBlock = cache(async (slug: string) => {
   try {
     return await prisma.contentBlock.findFirst({ where: { slug, isActive: true } });

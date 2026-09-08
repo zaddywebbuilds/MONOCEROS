@@ -12,10 +12,11 @@ import {
   SupportSection,
   WhyMonoceros,
 } from "@/components/marketing/sections";
+import { TestimonialsSection } from "@/components/marketing/testimonials-section";
 import { getMarketSnapshot } from "@/lib/market";
 import { getPublicSettings } from "@/lib/settings";
 import { getSession } from "@/lib/auth/session";
-import { getNextCycleStart, getPublicFaqs, getPublicPackages } from "@/server/queries/public";
+import { getNextCycleStart, getPublicFaqs, getPublicPackages, getPublicTestimonials } from "@/server/queries/public";
 import { appUrl } from "@/lib/env";
 import type { Weekday } from "@/lib/time";
 
@@ -29,12 +30,13 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [settings, session, packages, faqs, market] = await Promise.all([
+  const [settings, session, packages, faqs, market, testimonials] = await Promise.all([
     getPublicSettings(),
     getSession().catch(() => null),
     getPublicPackages(),
     getPublicFaqs(),
     getMarketSnapshot(),
+    getPublicTestimonials(),
   ]);
 
   const cycleStart = await getNextCycleStart();
@@ -53,6 +55,7 @@ export default async function HomePage() {
       />
       <InfrastructureSection />
       <WhyMonoceros />
+      <TestimonialsSection testimonials={testimonials} preview />
       <SupportSection settings={settings} />
       <FaqSection faqs={faqs} limit={6} showAllLink />
       <AboutPreview settings={settings} />

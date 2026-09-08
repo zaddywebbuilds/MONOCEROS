@@ -275,6 +275,22 @@ model PasswordResetToken {
   @@index([userId])
 }
 
+model Testimonial {
+  id              String   @id @default(cuid())
+  name            String
+  location        String?
+  content         String
+  receiptImageUrl String?
+  published       Boolean  @default(false)
+  featured        Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([published])
+  @@index([sortOrder])
+}
+
 model TwoFactorChallenge {
   id        String    @id @default(cuid())
   userId    String
