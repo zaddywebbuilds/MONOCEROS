@@ -18,7 +18,7 @@ const testimonialSchema = z.object({
   name: z.string().min(1, "Name is required").max(80),
   location: z.string().max(80).optional(),
   content: z.string().min(10, "Testimonial must be at least 10 characters").max(1000),
-  receiptImageUrl: z.string().url("Enter a valid image URL").or(z.literal("")).optional(),
+  receiptImageUrl: z.string().max(4_000_000).optional(),
   published: z.union([z.literal("on"), z.literal("true"), z.boolean()]).transform(Boolean).optional(),
   featured: z.union([z.literal("on"), z.literal("true"), z.boolean()]).transform(Boolean).optional(),
   sortOrder: z.coerce.number().int().min(0).default(0),

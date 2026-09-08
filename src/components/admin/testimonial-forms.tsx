@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ImageUp, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/interactive";
@@ -14,6 +14,86 @@ import {
 } from "@/server/actions/testimonials";
 import { idleState } from "@/lib/action-state";
 import type { Testimonial } from ".prisma/client";
+
+const MAX_SIZE_BYTES = 3 * 1024 * 1024; // 3 MB
+
+function ReceiptImagePicker({ existing }: { existing?: string | null }) {
+  const [preview, setPreview] = React.useState<string | null>(existing ?? null);
+  const [sizeError, setSizeError] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFile = (file: File) => {
+    if (file.size > MAX_SIZE_BYTES) {
+      setSizeError("Image must be under 3 MB.");
+      return;
+    }
+    setSizeError("");
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUri = e.target?.result as string;
+      setPreview(dataUri);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clear = () => {
+    setPreview(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[12px] font-medium text-fg-muted">
+        Receipt / proof image{" "}
+        <span className="text-fg-subtle">(optional, max 3 MB)</span>
+      </p>
+
+      {/* Hidden field carries the data URI (or empty string to clear) */}
+      <input type="hidden" name="receiptImageUrl" value={preview ?? ""} />
+
+      {preview ? (
+        <div className="relative inline-block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt="Receipt preview"
+            className="max-h-48 rounded-lg border border-ink-600 object-contain"
+          />
+          <button
+            type="button"
+            onClick={clear}
+            className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full border border-ink-500 bg-ink-800 text-fg-muted hover:text-fg"
+            aria-label="Remove image"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex h-24 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-ink-600 bg-ink-880/50 text-[12.5px] text-fg-subtle transition-colors hover:border-ink-500 hover:text-fg-muted"
+        >
+          <ImageUp className="size-5" aria-hidden />
+          Click to upload receipt image
+        </button>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFile(file);
+        }}
+      />
+
+      {sizeError ? <p className="text-[12px] text-status-rejected">{sizeError}</p> : null}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Shared form fields (used in both Add and Edit forms)
@@ -62,20 +142,7 @@ function TestimonialFields({
         />
       </Field>
 
-      <Field
-        label="Receipt / proof image URL (optional)"
-        htmlFor="t-image"
-        hint="Paste a link to an image of the withdrawal or deposit receipt."
-        error={err("receiptImageUrl")}
-      >
-        <Input
-          id="t-image"
-          name="receiptImageUrl"
-          type="url"
-          defaultValue={testimonial?.receiptImageUrl ?? ""}
-          placeholder="https://..."
-        />
-      </Field>
+      <ReceiptImagePicker existing={testimonial?.receiptImageUrl} />
 
       <div className="flex flex-wrap gap-5">
         <Field label="" htmlFor="t-published" error={err("published")}>
