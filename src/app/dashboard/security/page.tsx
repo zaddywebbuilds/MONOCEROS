@@ -9,6 +9,7 @@ import {
   RevokeSessionsButton,
   WithdrawalWalletForm,
 } from "@/components/dashboard/account-forms";
+import { TwoFactorSection } from "@/components/dashboard/two-factor-section";
 import { requireUser } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";
@@ -49,6 +50,12 @@ export default async function SecurityPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-start">
         <div className="space-y-6">
+          <Section title="Two-factor authentication" className="mt-0">
+            <Card className="p-5 sm:p-6">
+              <TwoFactorSection enabled={user.twoFactorEnabled} />
+            </Card>
+          </Section>
+
           <Section title="Password" className="mt-0">
             <Card className="p-5 sm:p-6">
               <ChangePasswordForm />

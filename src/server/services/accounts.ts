@@ -14,6 +14,13 @@ import {
   TOKEN_TTL,
 } from "@/lib/auth/tokens";
 import { createSession, revokeAllSessions } from "@/lib/auth/session";
+import {
+  generateTotpSecret,
+  getTotpQrDataUri,
+  verifyTotpCode,
+  generateRecoveryCodes,
+  hashRecoveryCode,
+} from "@/lib/auth/totp";
 import { requestContext } from "@/lib/request";
 import { formatBusinessDateTime } from "@/lib/time";
 import { notify, notifications } from "@/lib/notifications";
@@ -170,11 +177,9 @@ export async function verifyEmailToken(token: string): Promise<{ email: string }
 // Sign-in
 // ---------------------------------------------------------------------------
 
-export interface LoginResult {
-  userId: string;
-  role: "USER" | "SUPPORT" | "ADMIN" | "SUPER_ADMIN";
-  emailVerified: boolean;
-}
+export type LoginResult =
+  | { status: "ok"; userId: string; role: "USER" | "SUPPORT" | "ADMIN" | "SUPER_ADMIN"; emailVerified: boolean }
+  | { status: "2fa_required"; challengeToken: string; userId: string; role: "USER" | "SUPPORT" | "ADMIN" | "SUPER_ADMIN"; emailVerified: boolean };
 
 export async function loginUser(
   email: string,
@@ -256,6 +261,22 @@ export async function loginUser(
     });
   });
 
+  const base = { userId: user.id, role: user.role, emailVerified: Boolean(user.emailVerifiedAt) };
+
+  // If 2FA is enabled, issue a short-lived challenge token instead of a session
+  if (user.twoFactorEnabled && user.twoFactorSecret) {
+    const token = generateToken(32);
+    const tokenHash = hashToken(token);
+    await prisma.twoFactorChallenge.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt: expiresInMinutes(5),
+      },
+    });
+    return { status: "2fa_required" as const, challengeToken: token, ...base };
+  }
+
   await createSession(user.id, user.role);
 
   if (["ADMIN", "SUPER_ADMIN", "SUPPORT"].includes(user.role)) {
@@ -271,11 +292,7 @@ export async function loginUser(
     });
   }
 
-  return {
-    userId: user.id,
-    role: user.role,
-    emailVerified: Boolean(user.emailVerifiedAt),
-  };
+  return { status: "ok" as const, ...base };
 }
 
 // ---------------------------------------------------------------------------
@@ -426,4 +443,141 @@ export async function updateProfile(userId: string, phone: string): Promise<void
   await prisma.userProfile.update({ where: { userId }, data: { phone } });
 }
 
-export { AuthError };
+// ---------------------------------------------------------------------------
+// Two-factor authentication
+// ---------------------------------------------------------------------------
+
+const TWO_FACTOR_COOKIE = "mon_2fa_challenge";
+
+/**
+ * Begins TOTP setup: generates a secret and QR code URI but does NOT save
+ * anything yet — the user must verify a code first.
+ */
+export async function beginTotpSetup(
+  userId: string,
+  email: string,
+): Promise<{ secret: string; qrDataUri: string }> {
+  const secret = generateTotpSecret();
+  const qrDataUri = await getTotpQrDataUri(email, secret);
+  return { secret, qrDataUri };
+}
+
+/**
+ * Confirms TOTP setup: verifies the user's first code, saves the secret,
+ * and generates+stores recovery codes. Returns the plaintext recovery codes
+ * (shown once, never stored in plain text).
+ */
+export async function confirmTotpSetup(
+  userId: string,
+  secret: string,
+  code: string,
+): Promise<string[]> {
+  if (!verifyTotpCode(secret, code)) {
+    throw new BusinessRuleError("The code is incorrect. Please try again.");
+  }
+
+  const plainCodes = generateRecoveryCodes();
+  const hashes = plainCodes.map(hashRecoveryCode);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { twoFactorSecret: secret, twoFactorEnabled: true },
+    });
+    // Replace any existing recovery codes
+    await tx.twoFactorRecoveryCode.deleteMany({ where: { userId } });
+    await tx.twoFactorRecoveryCode.createMany({
+      data: hashes.map((codeHash) => ({ userId, codeHash })),
+    });
+  });
+
+  return plainCodes;
+}
+
+/**
+ * Disables TOTP after verifying the user's password.
+ */
+export async function disableTotp(userId: string, password: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AuthError("Account not found.");
+
+  const ok = await verifyPassword(password, user.passwordHash);
+  if (!ok) throw new AuthError("That password is not correct.");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: false, twoFactorSecret: null },
+    });
+    await tx.twoFactorRecoveryCode.deleteMany({ where: { userId } });
+  });
+}
+
+/**
+ * Verifies a TOTP challenge during login: validates the challenge cookie token,
+ * checks the TOTP code (or a recovery code), creates a real session.
+ */
+export async function completeTotpChallenge(
+  challengeToken: string,
+  code: string,
+): Promise<{ userId: string; role: "USER" | "SUPPORT" | "ADMIN" | "SUPER_ADMIN" }> {
+  const tokenHash = hashToken(challengeToken);
+  const challenge = await prisma.twoFactorChallenge.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!challenge) throw new AuthError("Invalid or expired sign-in challenge.");
+  if (challenge.usedAt) throw new AuthError("This challenge has already been used.");
+  if (challenge.expiresAt.getTime() < Date.now()) {
+    throw new AuthError("This sign-in challenge has expired. Please sign in again.");
+  }
+
+  const { user } = challenge;
+  if (!user.twoFactorSecret) throw new AuthError("Two-factor authentication is not configured.");
+
+  const isTotp = verifyTotpCode(user.twoFactorSecret, code);
+
+  if (!isTotp) {
+    // Try recovery code
+    const normalised = code.toUpperCase().replace(/[\s-]/g, "");
+    const codeHash = hashRecoveryCode(normalised);
+    const recovery = await prisma.twoFactorRecoveryCode.findFirst({
+      where: { userId: user.id, codeHash, usedAt: null },
+    });
+    if (!recovery) {
+      throw new AuthError("The code you entered is incorrect.");
+    }
+    await prisma.twoFactorRecoveryCode.update({
+      where: { id: recovery.id },
+      data: { usedAt: new Date() },
+    });
+  }
+
+  // Mark challenge used
+  await prisma.twoFactorChallenge.update({
+    where: { id: challenge.id },
+    data: { usedAt: new Date() },
+  });
+
+  // Create the real session
+  await createSession(user.id, user.role);
+
+  if (["ADMIN", "SUPER_ADMIN", "SUPPORT"].includes(user.role)) {
+    const { ipAddress } = await requestContext();
+    await prisma.adminProfile.updateMany({
+      where: { userId: user.id },
+      data: { lastLoginAt: new Date(), lastLoginIp: ipAddress },
+    });
+    await writeAudit({
+      actor: { id: user.id, email: user.email, role: user.role },
+      action: AUDIT_ACTION.ADMIN_LOGIN,
+      entityType: "User",
+      entityId: user.id,
+    });
+  }
+
+  return { userId: user.id, role: user.role };
+}
+
+export { AuthError, TWO_FACTOR_COOKIE };

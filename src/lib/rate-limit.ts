@@ -48,6 +48,7 @@ export const RATE_LIMITS = {
   supportMessage: { limit: 20, windowSeconds: 600 },
   contactForm: { limit: 5, windowSeconds: 900 },
   documentView: { limit: 60, windowSeconds: 300 },
+  totp: { limit: 10, windowSeconds: 300 },
 } as const satisfies Record<string, RateLimitOptions>;
 
 export type RateLimitName = keyof typeof RATE_LIMITS;

@@ -186,9 +186,11 @@ model User {
   ticketMessages SupportMessage[]
   loginEvents    LoginEvent[]
   auditLogs      AuditLog[]              @relation("AuditActor")
-  emailTokens    EmailVerificationToken[]
-  resetTokens    PasswordResetToken[]
-  walletChanges  WalletChangeLog[]
+  emailTokens       EmailVerificationToken[]
+  resetTokens       PasswordResetToken[]
+  walletChanges     WalletChangeLog[]
+  twoFactorChallenges TwoFactorChallenge[]
+  recoveryCodesHash   TwoFactorRecoveryCode[]
 
   @@index([role])
   @@index([status])
@@ -265,6 +267,31 @@ model PasswordResetToken {
   userId    String
   tokenHash String    @unique
   expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TwoFactorChallenge {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TwoFactorRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @unique
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
