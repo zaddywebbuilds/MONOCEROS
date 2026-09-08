@@ -4,7 +4,7 @@ import type { NotificationType } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import type { Tx } from "@/lib/prisma";
-import { getSettings } from "@/lib/settings";
+import { SETTING_DEFAULTS } from "@/lib/settings-registry";
 
 /**
  * In-app notification service.
@@ -21,9 +21,31 @@ export interface NotificationInput {
   link?: string;
 }
 
+/**
+ * Reads the dashboard-notification switch on the caller's own client.
+ *
+ * Deliberately not `getSettings()`. `notify` is nearly always called inside an
+ * interactive transaction, and `getSettings()` runs on the global client — so
+ * it acquires a *second* pooled connection while the transaction still holds
+ * one. Against a managed Postgres that is a full extra round trip (and a cold
+ * connection at that) inside every write transaction, which is enough on its
+ * own to exceed Prisma's interactive transaction timeout. It also risks a
+ * deadlock once the pool is saturated. Using the caller's client keeps the
+ * whole transaction on one connection, and reads one indexed row rather than
+ * the entire settings table.
+ */
+async function dashboardNotificationsEnabled(client: Tx): Promise<boolean> {
+  const row = await client.siteSetting.findUnique({
+    where: { key: "notify.dashboardEnabled" },
+    select: { value: true },
+  });
+
+  if (!row) return SETTING_DEFAULTS["notify.dashboardEnabled"];
+  return row.value === true;
+}
+
 export async function notify(input: NotificationInput, client: Tx = prisma): Promise<void> {
-  const settings = await getSettings();
-  if (!settings["notify.dashboardEnabled"]) return;
+  if (!(await dashboardNotificationsEnabled(client))) return;
 
   await client.notification.create({
     data: {

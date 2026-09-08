@@ -30,6 +30,15 @@ function createClient(): PrismaClient {
       ...(Number.isFinite(poolMax) && poolMax > 0 ? { max: poolMax } : {}),
     }),
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    // Prisma's 5s default assumes a database on the same machine. Ours is a
+    // managed Postgres reached over the network, where a multi-statement
+    // transaction (and an occasional cold connection) can legitimately take
+    // longer than that. The registration transaction was being aborted
+    // mid-flight at ~5.3s because of it.
+    transactionOptions: {
+      maxWait: 10_000,
+      timeout: 20_000,
+    },
   });
 }
 
