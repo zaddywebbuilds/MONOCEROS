@@ -16,7 +16,7 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <header className="relative overflow-hidden border-b border-ink-700/60 py-14 sm:py-16 lg:py-20">
+    <header className="relative overflow-hidden border-b border-ink-700/60 py-10 sm:py-12 lg:py-14">
       <GridBackdrop />
       <div
         aria-hidden
@@ -109,7 +109,7 @@ export function DocumentLayout({
   aside?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="grid gap-10 lg:grid-cols-[1fr_18rem] lg:gap-14">
         <div className="min-w-0 max-w-3xl">{children}</div>
         {aside ? <aside className="lg:sticky lg:top-24 lg:self-start">{aside}</aside> : null}

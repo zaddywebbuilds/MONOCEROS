@@ -55,7 +55,7 @@ export default async function HowItWorksPage() {
         durationDays={settings["investment.durationDays"]}
       />
 
-      <section className="py-16 sm:py-20">
+      <section className="py-10 sm:py-12">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:gap-14">
             <div>

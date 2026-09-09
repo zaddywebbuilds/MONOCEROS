@@ -14,7 +14,7 @@ const ASSURANCES = [
 
 export function Hero({ settings }: { settings: SettingsMap }) {
   return (
-    <section className="relative overflow-hidden pb-16 pt-12 sm:pb-20 sm:pt-16 lg:pb-28 lg:pt-20">
+    <section className="relative overflow-hidden pb-10 pt-10 sm:pb-12 sm:pt-12 lg:pb-16 lg:pt-14">
       <GridBackdrop />
       <GlowOrbs />
       <Particles className="opacity-70" />

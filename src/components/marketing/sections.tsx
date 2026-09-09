@@ -59,7 +59,7 @@ const BENEFITS = [
 
 export function WhyMonoceros() {
   return (
-    <section className="relative py-16 sm:py-20 lg:py-24">
+    <section className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <SectionEyebrow>Why Monoceros</SectionEyebrow>
@@ -95,7 +95,7 @@ export function WhyMonoceros() {
 
 export function InfrastructureSection() {
   return (
-    <section className="relative py-16 sm:py-20 lg:py-24">
+    <section className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-14">
           <div>
@@ -159,7 +159,7 @@ export function SupportSection({ settings }: { settings: SettingsMap }) {
   const email = settings["support.email"];
 
   return (
-    <section id="support" className="relative py-16 sm:py-20">
+    <section id="support" className="relative py-10 sm:py-12">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="surface relative overflow-hidden p-6 sm:p-10">
           <div
@@ -262,7 +262,7 @@ export function FaqSection({
   const items = limit ? faqs.slice(0, limit) : faqs;
 
   return (
-    <section id="faq" className="relative py-16 sm:py-20 lg:py-24">
+    <section id="faq" className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <SectionEyebrow>Questions</SectionEyebrow>
@@ -307,7 +307,7 @@ export function FaqSection({
 
 export function AboutPreview({ settings }: { settings: SettingsMap }) {
   return (
-    <section className="relative py-16 sm:py-20 lg:py-24">
+    <section className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <Hairline className="mb-14" />
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">

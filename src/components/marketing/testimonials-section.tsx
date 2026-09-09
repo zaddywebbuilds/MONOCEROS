@@ -58,7 +58,7 @@ export function TestimonialsSection({
   const shown = preview ? testimonials.slice(0, 3) : testimonials;
 
   return (
-    <section aria-labelledby="testimonials-heading" className="relative overflow-hidden py-20 sm:py-28">
+    <section aria-labelledby="testimonials-heading" className="relative overflow-hidden py-10 sm:py-14">
       <Hairline />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">

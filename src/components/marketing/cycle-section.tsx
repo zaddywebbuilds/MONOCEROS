@@ -22,7 +22,7 @@ export function CycleSection({
   const initial = countdownTo(cycleStart);
 
   return (
-    <section id="cycles" className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
+    <section id="cycles" className="relative overflow-hidden py-10 sm:py-12 lg:py-14">
       <GlowOrbs variant="section" />
 
       <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">

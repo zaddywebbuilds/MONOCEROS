@@ -129,7 +129,7 @@ export function PackagesSection({
   showHeading?: boolean;
 }) {
   return (
-    <section id="packages" className="relative py-16 sm:py-20 lg:py-24">
+    <section id="packages" className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         {showHeading ? (
           <div className="max-w-2xl">

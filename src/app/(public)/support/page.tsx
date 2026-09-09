@@ -51,7 +51,7 @@ export default async function SupportPage() {
         description="Choose the channel that fits. For anything involving money or your identity, use a support ticket so there is a written record."
       />
 
-      <section className="py-12 sm:py-16">
+      <section className="py-8 sm:py-10">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-5 md:grid-cols-3">
             {CHANNELS.map((channel) => (

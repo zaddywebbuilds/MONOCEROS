@@ -209,7 +209,7 @@ export function ProcessStages({
   });
 
   return (
-    <section id="how-it-works" className="relative py-16 sm:py-20 lg:py-24">
+    <section id="how-it-works" className="relative py-10 sm:py-12 lg:py-14">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal>
           <header className="max-w-2xl" data-reveal="">
@@ -226,10 +226,10 @@ export function ProcessStages({
         </Reveal>
 
         {full ? (
-          <ol role="list" className="mt-14 space-y-16 lg:mt-20 lg:space-y-28">
+          <ol role="list" className="mt-10 space-y-12 lg:mt-12 lg:space-y-16">
             {stages.map((stage, index) => (
               <li key={stage.title}>
-                <Reveal className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
+                <Reveal className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
                   <div className={cn(index % 2 === 1 && "lg:order-2")} data-reveal="">
                     <StageLabel icon={stage.icon} index={index} />
                     <h3 className="mt-5 text-2xl font-semibold tracking-tight text-fg sm:text-[28px]">
@@ -266,7 +266,7 @@ export function ProcessStages({
           <Reveal>
             <ol
               role="list"
-              className="mt-12 grid grid-cols-1 gap-x-8 gap-y-12 lg:mt-16 lg:grid-cols-2 lg:gap-y-16"
+              className="mt-10 grid grid-cols-1 gap-x-8 gap-y-10 lg:mt-12 lg:grid-cols-2 lg:gap-y-12"
             >
               {stages.map((stage, index) => (
                 <li
@@ -289,7 +289,7 @@ export function ProcessStages({
         )}
 
         <Reveal>
-          <p className="mt-14 text-center" data-reveal="">
+          <p className="mt-10 text-center" data-reveal="">
             <Link
               href={cycleHref}
               className="group inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-300 transition-colors hover:text-accent-200"
@@ -304,12 +304,12 @@ export function ProcessStages({
         </Reveal>
 
         {videoUrl ? (
-          <div className="mx-auto mt-12 max-w-3xl">
+          <div className="mx-auto mt-10 max-w-3xl">
             <ExplainerVideo url={videoUrl} />
           </div>
         ) : null}
 
-        <Reveal className="mt-12 lg:mt-16">
+        <Reveal className="mt-10 lg:mt-12">
           <ProcessCta user={user} />
         </Reveal>
       </div>

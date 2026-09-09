@@ -45,7 +45,7 @@ export default async function MarketsPage() {
         </div>
       </PageHeader>
 
-      <section className="py-12 sm:py-16">
+      <section className="py-8 sm:py-10">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           {!snapshot.available ? (
             <ErrorState
@@ -180,7 +180,7 @@ export default async function MarketsPage() {
         </div>
       </section>
 
-      <section className="pb-20">
+      <section className="pb-12">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
             <div>
