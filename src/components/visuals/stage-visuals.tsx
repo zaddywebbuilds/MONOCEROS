@@ -5,18 +5,21 @@ import { cn } from "@/lib/utils";
 /**
  * Stage artwork for the process section.
  *
- * One picture per stage of a subscription, drawn as SVG rather than sourced as
- * an image so it stays sharp at any size, weighs nothing and can be corrected
- * when the product changes.
+ * One card per stage of a subscription, drawn as SVG so it stays sharp at any
+ * size, weighs nothing, and can be corrected when the product changes.
  *
- * They are lit and layered like artwork — a warm light from the top left, cards
- * raised off the ground on soft shadows, glass surfaces graded from light to
- * dark — but everything they depict is true. Following the rule already set in
- * `illustrations.tsx`, they show the *mechanism* and never a fabricated
- * dashboard, balance, return or anybody's activity. What is drawn comes from the
- * platform itself: the registration fields, the five accepted identity
- * documents, the deposit network labels, and the real payment and withdrawal
- * status chains.
+ * They are built like product cards — an accent edge, a category line, a bold
+ * title, and verified facts ticked off at the foot — and lit like artwork, with
+ * a warm light top left, surfaces raised on soft shadows and accents that give
+ * off their own glow.
+ *
+ * Everything they show is true. Following the rule set in `illustrations.tsx`,
+ * they depict the mechanism and never fabricate a dashboard, a balance, a
+ * return or anybody's activity. There is deliberately no "live" badge, no
+ * elapsed-time stamp and no count of other investors: manufactured urgency has
+ * no place on a page where somebody is about to send real money. Where a card
+ * shows figures or a date they are the real ones, passed in from the database
+ * and the cycle schedule.
  */
 
 const C = {
@@ -36,26 +39,49 @@ const C = {
 const FONT = "Inter, ui-sans-serif, system-ui, sans-serif";
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
+export interface PanelPackage {
+  name: string;
+  capital: string;
+  returnPct: string;
+  maturity: string;
+  badge?: string | null;
+}
+
+/** A fact the card ticks off. Only ever something the platform actually does. */
+type Check = string;
+
 /**
- * Every panel shares one canvas and one lighting rig, so the eight read as a
- * set. Gradients and filters are referenced by id, and ids are global to the
- * document — eight panels sharing one id would all take the first panel's
- * definition — so each panel prefixes its own.
+ * The shared card. Gradients, filters and clip paths are referenced by id, and
+ * ids are global to the document — eight cards sharing one id would all take
+ * the first card's definition — so each prefixes its own.
  */
 function Panel({
   id,
   label,
+  accent = "gold",
+  kicker,
+  title,
+  right,
+  checks = [],
   className,
   children,
 }: {
   id: string;
   label: string;
+  accent?: "gold" | "emerald";
+  kicker: string;
+  title: string;
+  right?: string;
+  checks?: Check[];
   className?: string;
   children: React.ReactNode;
 }) {
+  const edge = accent === "emerald" ? C.emerald : C.gold;
+  const edgeSoft = accent === "emerald" ? C.emeraldSoft : C.goldSoft;
+
   return (
     <svg
-      viewBox="0 0 560 300"
+      viewBox="0 0 560 360"
       fill="none"
       role="img"
       aria-label={label}
@@ -63,36 +89,40 @@ function Panel({
       className={cn("h-auto w-full", className)}
     >
       <defs>
-        {/* The ground the whole scene sits on. */}
+        <clipPath id={`${id}-clip`}>
+          <rect x="0.75" y="0.75" width="558.5" height="358.5" rx="18" />
+        </clipPath>
+
         <linearGradient id={`${id}-ground`} x1="0" y1="0" x2="0.5" y2="1">
-          <stop offset="0%" stopColor="#0d1524" />
+          <stop offset="0%" stopColor="#0e1727" />
           <stop offset="100%" stopColor="#05080f" />
         </linearGradient>
 
-        {/* A raised surface, lit from above. */}
         <linearGradient id={`${id}-card`} x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0%" stopColor="#16203a" />
+          <stop offset="0%" stopColor="#18233e" />
           <stop offset="100%" stopColor="#0b1220" />
         </linearGradient>
 
-        {/* A recessed surface — inputs and wells sit below the plane. */}
         <linearGradient id={`${id}-well`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#080d18" />
+          <stop offset="0%" stopColor="#070c16" />
           <stop offset="100%" stopColor="#0d1424" />
         </linearGradient>
 
-        {/* The warm light source, top left. */}
-        <radialGradient id={`${id}-light`} cx="16%" cy="2%" r="86%">
-          <stop offset="0%" stopColor="#d9ae5c" stopOpacity="0.17" />
-          <stop offset="55%" stopColor="#d9ae5c" stopOpacity="0.03" />
-          <stop offset="100%" stopColor="#d9ae5c" stopOpacity="0" />
+        <radialGradient id={`${id}-light`} cx="14%" cy="0%" r="88%">
+          <stop offset="0%" stopColor={edge} stopOpacity="0.2" />
+          <stop offset="55%" stopColor={edge} stopOpacity="0.04" />
+          <stop offset="100%" stopColor={edge} stopOpacity="0" />
         </radialGradient>
 
-        {/* The highlight it leaves along a top edge. */}
         <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.16" />
+          <stop offset="45%" stopColor="#ffffff" stopOpacity="0.17" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+
+        <linearGradient id={`${id}-edge`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={edgeSoft} />
+          <stop offset="100%" stopColor={accent === "emerald" ? C.emeraldDeep : C.goldDeep} />
         </linearGradient>
 
         <linearGradient id={`${id}-goldFill`} x1="0" y1="0" x2="0" y2="1">
@@ -101,12 +131,12 @@ function Panel({
         </linearGradient>
 
         <linearGradient id={`${id}-goldTint`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4a3413" />
+          <stop offset="0%" stopColor="#4d3614" />
           <stop offset="100%" stopColor="#241a09" />
         </linearGradient>
 
         <linearGradient id={`${id}-greenTint`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0a4a3d" />
+          <stop offset="0%" stopColor="#0b5042" />
           <stop offset="100%" stopColor="#052620" />
         </linearGradient>
 
@@ -115,56 +145,76 @@ function Panel({
           <stop offset="100%" stopColor="#12c99b" />
         </linearGradient>
 
-        {/* Cards lift off the ground. */}
         <filter id={`${id}-lift`} x="-30%" y="-30%" width="160%" height="180%">
           <feDropShadow dx="0" dy="7" stdDeviation="9" floodColor="#000000" floodOpacity="0.6" />
         </filter>
-
-        {/* Accents give off their own light. */}
         <filter id={`${id}-goldGlow`} x="-60%" y="-60%" width="220%" height="220%">
           <feDropShadow dx="0" dy="0" stdDeviation="7" floodColor="#d9ae5c" floodOpacity="0.5" />
         </filter>
-
         <filter id={`${id}-greenGlow`} x="-60%" y="-60%" width="220%" height="220%">
           <feDropShadow dx="0" dy="0" stdDeviation="7" floodColor="#12c99b" floodOpacity="0.5" />
         </filter>
       </defs>
 
-      <rect x="0.75" y="0.75" width="558.5" height="298.5" rx="18" fill={`url(#${id}-ground)`} />
-      <rect x="0.75" y="0.75" width="558.5" height="298.5" rx="18" fill={`url(#${id}-light)`} />
+      <rect x="0.75" y="0.75" width="558.5" height="358.5" rx="18" fill={`url(#${id}-ground)`} />
+      <rect x="0.75" y="0.75" width="558.5" height="358.5" rx="18" fill={`url(#${id}-light)`} />
+
+      {/* The accent edge that gives the card its category at a glance. */}
+      <g clipPath={`url(#${id}-clip)`}>
+        <rect x="0" y="0" width="5" height="360" fill={`url(#${id}-edge)`} />
+      </g>
+
       <rect
         x="0.75"
         y="0.75"
         width="558.5"
-        height="298.5"
+        height="358.5"
         rx="18"
         stroke={C.line}
         strokeWidth="1.5"
       />
-      {/* The light catching the top edge of the panel. */}
       <path d="M22 1.5 H538" stroke={`url(#${id}-sheen)`} strokeWidth="1.5" />
 
+      <circle cx="32" cy="31" r="3.5" fill={edge} />
+      <text
+        x="44"
+        y="35"
+        fill={edgeSoft}
+        fontSize="10.5"
+        fontWeight="600"
+        letterSpacing="1.4"
+      >
+        {kicker.toUpperCase()}
+      </text>
+
+      <text x="30" y="66" fill={C.fg} fontSize="17.5" fontWeight="600">
+        {title}
+      </text>
+      {right ? (
+        <text x="530" y="66" fill={edgeSoft} fontSize="12.5" textAnchor="end" fontWeight="500">
+          {right}
+        </text>
+      ) : null}
+
       {children}
+
+      {checks.length ? (
+        <>
+          <path d="M30 302 H530" stroke={C.line} strokeWidth="1" />
+          {checks.map((check, i) => (
+            <React.Fragment key={check}>
+              <Tick x={41} y={322 + i * 22} s={0.9} />
+              <text x={56} y={326 + i * 22} fill={C.emeraldSoft} fontSize="12">
+                {check}
+              </text>
+            </React.Fragment>
+          ))}
+        </>
+      ) : null}
     </svg>
   );
 }
 
-function Title({ children, right }: { children: string; right?: string }) {
-  return (
-    <>
-      <text x="32" y="40" fill={C.fg} fontSize="16" fontWeight="600">
-        {children}
-      </text>
-      {right ? (
-        <text x="528" y="40" fill={C.gold} fontSize="12.5" textAnchor="end" fontWeight="500">
-          {right}
-        </text>
-      ) : null}
-    </>
-  );
-}
-
-/** A form field: a recessed well with its label resting inside, as on the real forms. */
 function Field({
   id,
   x,
@@ -196,7 +246,6 @@ function Field({
         stroke={C.line}
         strokeWidth="1.2"
       />
-      {/* The inner shadow along the top edge that makes a well look sunken. */}
       <path
         d={`M${x + 10} ${y + 1.2} H${x + w - 10}`}
         stroke="#000000"
@@ -280,7 +329,6 @@ function Pill({
   );
 }
 
-/** A raised surface with the light catching its top edge. */
 function Card({
   id,
   x,
@@ -328,14 +376,6 @@ function Card({
         strokeWidth="1.3"
       />
     </g>
-  );
-}
-
-function Caption({ y, children }: { y: number; children: string }) {
-  return (
-    <text x="32" y={y} fill={C.subtle} fontSize="12">
-      {children}
-    </text>
   );
 }
 
@@ -403,42 +443,44 @@ export function CreateAccountPanel({ className }: { className?: string }) {
     <Panel
       id={id}
       className={className}
+      kicker="Step 01 · Your details"
+      title="Registration"
       label="A registration form showing the name, date of birth, mobile number and email fields, followed by an email confirmation step"
+      checks={[
+        "A confirmation link is emailed the moment you register",
+        "Confirming it is required before you can subscribe",
+      ]}
     >
-      <Title>Registration</Title>
-
-      <Card id={id} x={20} y={54} w={520} h={224} rx={14} />
-
-      <Field id={id} x={40} y={74} w={230} label="First name" />
-      <Field id={id} x={290} y={74} w={230} label="Surname" />
-      <Field id={id} x={40} y={124} w={230} label="Date of birth" />
-      <Field id={id} x={290} y={124} w={230} label="Mobile number" />
-      <Field id={id} x={40} y={174} w={480} label="Email address" />
+      <Field id={id} x={30} y={90} w={240} label="First name" />
+      <Field id={id} x={290} y={90} w={240} label="Surname" />
+      <Field id={id} x={30} y={140} w={240} label="Date of birth" />
+      <Field id={id} x={290} y={140} w={240} label="Mobile number" />
+      <Field id={id} x={30} y={190} w={500} label="Email address" />
 
       <g filter={`url(#${id}-goldGlow)`}>
-        <rect x="40" y="226" width="180" height="42" rx="10" fill={`url(#${id}-goldFill)`} />
+        <rect x="30" y="242" width="190" height="44" rx="10" fill={`url(#${id}-goldFill)`} />
       </g>
-      <text x="130" y="252" fill="#04060c" fontSize="13.5" fontWeight="600" textAnchor="middle">
+      <text x="125" y="269" fill="#04060c" fontSize="13.5" fontWeight="600" textAnchor="middle">
         Create account
       </text>
 
       <rect
         x="240"
-        y="226"
-        width="280"
-        height="42"
+        y="242"
+        width="290"
+        height="44"
         rx="10"
         fill={`url(#${id}-well)`}
         stroke={C.line}
         strokeWidth="1.2"
       />
-      <rect x="258" y="239" width="20" height="15" rx="3" stroke={C.muted} strokeWidth="1.3" />
-      <path d="M258 241 l10 7 l10 -7" stroke={C.muted} strokeWidth="1.3" fill="none" />
-      <text x="290" y="252" fill={C.muted} fontSize="12.5">
+      <rect x="258" y="256" width="20" height="15" rx="3" stroke={C.muted} strokeWidth="1.3" />
+      <path d="M258 258 l10 7 l10 -7" stroke={C.muted} strokeWidth="1.3" fill="none" />
+      <text x="290" y="269" fill={C.muted} fontSize="12.5">
         Confirm your email
       </text>
       <g filter={`url(#${id}-greenGlow)`}>
-        <Tick x={500} y={247} />
+        <Tick x={510} y={264} />
       </g>
     </Panel>
   );
@@ -462,30 +504,33 @@ export function VerifyIdentityPanel({ className }: { className?: string }) {
     <Panel
       id={id}
       className={className}
-      label="An identity verification screen: a NIN field, an identity document, the five accepted document types, and a manual compliance review"
+      kicker="Step 02 · Compliance"
+      title="Identity verification"
+      label="An identity verification screen: a NIN field, an identity document, and the five accepted document types"
+      checks={[
+        "Reviewed by a person, not an automated score",
+        "Stored privately — never a public folder, never a CDN",
+      ]}
     >
-      <Title>Identity verification</Title>
+      <Field id={id} x={30} y={90} w={500} label="NIN" value="••• ••• ••• ••" mono />
 
-      <Field id={id} x={32} y={62} w={496} label="NIN" value="••• ••• ••• ••" mono />
-
-      {/* The submitted document, tilted as though laid on the desk. */}
-      <g transform="rotate(-2.6 148 172)">
-        <Card id={id} x={32} y={118} w={232} h={108} />
+      <g transform="rotate(-2.6 148 200)">
+        <Card id={id} x={30} y={146} w={236} h={110} />
         <rect
-          x="48"
-          y="134"
-          width="52"
-          height="62"
+          x="46"
+          y="162"
+          width="54"
+          height="64"
           rx="8"
           fill={`url(#${id}-well)`}
           stroke={C.lineSoft}
         />
-        <circle cx="74" cy="157" r="10" fill="#26344f" />
-        <path d="M58 188 a16 13 0 0 1 32 0" fill="#26344f" />
-        <rect x="114" y="140" width="104" height="9" rx="4.5" fill="#26344f" />
-        <rect x="114" y="158" width="78" height="9" rx="4.5" fill="#1d283f" />
-        <rect x="114" y="176" width="120" height="9" rx="4.5" fill="#1d283f" />
-        <text x="48" y="214" fill={C.subtle} fontSize="11.5">
+        <circle cx="73" cy="186" r="10" fill="#2c3c5c" />
+        <path d="M57 218 a16 13 0 0 1 32 0" fill="#2c3c5c" />
+        <rect x="114" y="168" width="106" height="9" rx="4.5" fill="#2c3c5c" />
+        <rect x="114" y="186" width="80" height="9" rx="4.5" fill="#1f2b45" />
+        <rect x="114" y="204" width="122" height="9" rx="4.5" fill="#1f2b45" />
+        <text x="46" y="244" fill={C.subtle} fontSize="11.5">
           Identity document
         </text>
       </g>
@@ -494,8 +539,8 @@ export function VerifyIdentityPanel({ className }: { className?: string }) {
         <Pill
           key={doc}
           id={id}
-          x={288}
-          y={118 + i * 30}
+          x={290}
+          y={146 + i * 29}
           w={240}
           h={24}
           size={11.5}
@@ -504,8 +549,6 @@ export function VerifyIdentityPanel({ className }: { className?: string }) {
           glow={i === 0}
         />
       ))}
-
-      <Pill id={id} x={32} y={240} w={232} label="Reviewed by a person" tone="gold" size={11.5} />
     </Panel>
   );
 }
@@ -517,87 +560,104 @@ export function VerifyIdentityPanel({ className }: { className?: string }) {
 export function ChoosePackagePanel({
   className,
   durationDays = 30,
+  packages = [],
 }: {
   className?: string;
   durationDays?: number;
+  /** The real active packages. Falls back to unlabelled tiers if none are set up. */
+  packages?: PanelPackage[];
 }) {
   const id = "s3";
-  const tiers = [0.42, 0.68, 1];
+  const shown = packages.slice(0, 3);
+  const featured = Math.max(
+    shown.findIndex((p) => p.badge),
+    0,
+  );
 
   return (
     <Panel
       id={id}
       className={className}
-      label="Three investment packages of increasing capital, one selected and raised, with the term recorded on the investment"
+      kicker="Step 03 · Packages"
+      title="Investment packages"
+      right={`${durationDays}-day term`}
+      label="The available investment packages, showing the capital, return and maturity value of each"
+      checks={["Terms are recorded on your investment the moment you subscribe"]}
     >
-      <Title>Investment packages</Title>
-
-      {tiers.map((ratio, i) => {
-        const x = 32 + i * 174;
-        const selected = i === 1;
-        // The chosen tier lifts off the row, the way a picked card would.
-        const y = selected ? 56 : 68;
-        const h = selected ? 190 : 168;
+      {(shown.length ? shown : [null, null, null]).map((pkg, i) => {
+        const x = 30 + i * 172;
+        const selected = i === featured;
+        const y = selected ? 88 : 98;
+        const h = selected ? 196 : 176;
 
         return (
-          <React.Fragment key={i}>
+          <React.Fragment key={pkg?.name ?? i}>
             <Card
               id={id}
               x={x}
               y={y}
-              w={148}
+              w={156}
               h={h}
               stroke={selected ? C.goldDeep : C.line}
               glow={selected ? "gold" : undefined}
             />
-            <rect x={x + 16} y={y + 20} width="64" height="10" rx="5" fill="#26344f" />
-            {selected ? (
-              <>
-                <circle
-                  cx={x + 126}
-                  cy={y + 25}
-                  r="9"
-                  fill={`url(#${id}-goldTint)`}
-                  stroke={C.goldDeep}
-                />
-                <Tick x={x + 126} y={y + 25} colour={C.goldSoft} s={0.8} />
-              </>
+
+            {pkg ? (
+              <text x={x + 16} y={y + 28} fill={C.fg} fontSize="13" fontWeight="600">
+                {pkg.name}
+              </text>
+            ) : (
+              <rect x={x + 16} y={y + 18} width="68" height="10" rx="5" fill="#2c3c5c" />
+            )}
+
+            <text x={x + 16} y={y + 58} fill={C.subtle} fontSize="10.5" letterSpacing="0.6">
+              CAPITAL
+            </text>
+            {pkg ? (
+              <text x={x + 16} y={y + 82} fill={C.fg} fontSize="19" fontWeight="600">
+                {pkg.capital}
+              </text>
+            ) : (
+              <rect x={x + 16} y={y + 68} width="96" height="12" rx="6" fill="#2c3c5c" />
+            )}
+
+            <text x={x + 16} y={y + 112} fill={C.subtle} fontSize="10.5" letterSpacing="0.6">
+              RETURN
+            </text>
+            {pkg ? (
+              <text x={x + 16} y={y + 132} fill={C.goldSoft} fontSize="14.5" fontWeight="600">
+                {pkg.returnPct}
+              </text>
+            ) : (
+              <rect x={x + 16} y={y + 120} width="60" height="10" rx="5" fill="#2c3c5c" />
+            )}
+
+            <text x={x + 16} y={y + 158} fill={C.subtle} fontSize="10.5" letterSpacing="0.6">
+              AT MATURITY
+            </text>
+            {pkg ? (
+              <text x={x + 16} y={y + 178} fill={C.emeraldSoft} fontSize="14.5" fontWeight="600">
+                {pkg.maturity}
+              </text>
+            ) : (
+              <rect x={x + 16} y={y + 166} width="78" height="10" rx="5" fill="#2c3c5c" />
+            )}
+
+            {selected && pkg?.badge ? (
+              <Pill
+                id={id}
+                x={x + 92}
+                y={y + 14}
+                w={50}
+                h={20}
+                size={9}
+                label={pkg.badge}
+                tone="gold"
+              />
             ) : null}
-
-            <text x={x + 16} y={y + 62} fill={C.subtle} fontSize="11">
-              Capital
-            </text>
-            <rect x={x + 16} y={y + 70} width="116" height="8" rx="4" fill="#111a2c" />
-            <rect
-              x={x + 16}
-              y={y + 70}
-              width={116 * ratio}
-              height="8"
-              rx="4"
-              fill={selected ? `url(#${id}-goldFill)` : "#2b3a5c"}
-            />
-
-            <text x={x + 16} y={y + 104} fill={C.subtle} fontSize="11">
-              Return
-            </text>
-            <rect x={x + 16} y={y + 112} width="116" height="8" rx="4" fill="#111a2c" />
-            <rect
-              x={x + 16}
-              y={y + 112}
-              width={116 * (0.5 + ratio * 0.45)}
-              height="8"
-              rx="4"
-              fill={selected ? `url(#${id}-goldFill)` : "#2b3a5c"}
-            />
-
-            <text x={x + 16} y={y + 150} fill={selected ? C.goldSoft : C.muted} fontSize="12">
-              {durationDays}-day term
-            </text>
           </React.Fragment>
         );
       })}
-
-      <Caption y={272}>Its terms are recorded on your investment the moment you subscribe.</Caption>
     </Panel>
   );
 }
@@ -612,44 +672,40 @@ export function PayWithUsdtPanel({ className }: { className?: string }) {
     <Panel
       id={id}
       className={className}
+      kicker="Step 04 · Payment"
+      title="Pay with USDT"
+      right="USDT"
       label="A USDT payment screen: a choice of network, the company wallet address, and a field for the transaction hash"
+      checks={[
+        "TRC-20 and BEP-20 are both supported",
+        "The address shown changes with the network you pick",
+      ]}
     >
-      <Title right="USDT">Payment</Title>
+      <Pill id={id} x={30} y={90} w={176} h={34} label="TRC-20 (Tron)" tone="gold" glow />
+      <Pill id={id} x={218} y={90} w={224} h={34} label="BEP-20 (BNB Smart Chain)" />
 
-      <Pill
-        id={id}
-        x={32}
-        y={62}
-        w={168}
-        h={32}
-        label="TRC-20 (Tron)"
-        tone="gold"
-        glow
-      />
-      <Pill id={id} x={212} y={62} w={214} h={32} label="BEP-20 (BNB Smart Chain)" />
-
-      <text x="32" y="128" fill={C.subtle} fontSize="11.5">
-        Company wallet address
+      <text x="30" y="156" fill={C.subtle} fontSize="11.5" letterSpacing="0.5">
+        COMPANY WALLET ADDRESS
       </text>
       {/* Masked deliberately: a live receiving address must never appear in artwork. */}
       <rect
-        x="32"
-        y="136"
-        width="496"
-        height="46"
+        x="30"
+        y="164"
+        width="500"
+        height="48"
         rx="10"
         fill={`url(#${id}-well)`}
         stroke={C.line}
         strokeWidth="1.2"
       />
-      <path d="M42 137.2 H518" stroke="#000000" strokeOpacity="0.5" strokeWidth="1.4" />
-      <text x="50" y="165" fill={C.muted} fontSize="14" fontFamily={MONO} letterSpacing="1.5">
+      <path d="M40 165.2 H520" stroke="#000000" strokeOpacity="0.5" strokeWidth="1.4" />
+      <text x="48" y="194" fill={C.muted} fontSize="14" fontFamily={MONO} letterSpacing="1.5">
         T•••••••••••••••••••••••••••
       </text>
-      <rect x="482" y="150" width="14" height="17" rx="3" stroke={C.gold} strokeWidth="1.3" />
+      <rect x="484" y="179" width="14" height="17" rx="3" stroke={C.gold} strokeWidth="1.3" />
       <rect
-        x="488"
-        y="155"
+        x="490"
+        y="184"
         width="14"
         height="17"
         rx="3"
@@ -658,12 +714,10 @@ export function PayWithUsdtPanel({ className }: { className?: string }) {
         strokeWidth="1.3"
       />
 
-      <text x="32" y="206" fill={C.subtle} fontSize="11.5">
-        Transaction hash
+      <text x="30" y="238" fill={C.subtle} fontSize="11.5" letterSpacing="0.5">
+        TRANSACTION HASH
       </text>
-      <Field id={id} x={32} y={214} w={496} h={44} label="Paste the hash of your transfer" />
-
-      <Caption y={282}>Send the exact amount on the network shown, then submit the hash.</Caption>
+      <Field id={id} x={30} y={246} w={500} h={44} label="Paste the hash of your transfer" />
     </Panel>
   );
 }
@@ -684,13 +738,16 @@ export function PaymentVerifiedPanel({ className }: { className?: string }) {
     <Panel
       id={id}
       className={className}
+      accent="emerald"
+      kicker="Step 05 · Verification"
+      title="Payment review"
       label="The payment status chain: submitted, then under review, then approved, with rejection shown as the alternative outcome"
+      checks={["You are notified either way, as soon as it is decided"]}
     >
       <ArrowHead id={`${id}-head`} colour={C.line} />
-      <Title>Payment review</Title>
 
       {stages.map((stage, i) => {
-        const x = 32 + i * 178;
+        const x = 30 + i * 174;
         const stroke =
           stage.tone === "gold" ? C.goldDeep : stage.tone === "emerald" ? C.emeraldDeep : C.line;
         const text =
@@ -707,34 +764,32 @@ export function PaymentVerifiedPanel({ className }: { className?: string }) {
             <Card
               id={id}
               x={x}
-              y={76}
-              w={140}
-              h={60}
+              y={100}
+              w={152}
+              h={62}
               stroke={stroke}
               fill={fill}
               glow={stage.tone === "emerald" ? "emerald" : undefined}
             />
-            <text x={x + 70} y={i === 2 ? 104 : 111} fill={text} fontSize="13" textAnchor="middle">
+            <text x={x + 76} y={i === 2 ? 129 : 136} fill={text} fontSize="13" textAnchor="middle">
               {stage.label}
             </text>
-            {i === 2 ? <Tick x={x + 70} y={118} /> : null}
-            {i < 2 ? <Arrow marker={`${id}-head`} d={`M${x + 148} 106 L ${x + 170} 106`} /> : null}
+            {i === 2 ? <Tick x={x + 76} y={143} /> : null}
+            {i < 2 ? <Arrow marker={`${id}-head`} d={`M${x + 160} 131 L ${x + 166} 131`} /> : null}
           </React.Fragment>
         );
       })}
 
       {/* The honest alternative: review can also decline, and you are told why. */}
-      <Arrow marker={`${id}-head`} d="M280 144 L 280 182 L 368 182" />
-      <Pill id={id} x={376} y={168} w={152} label="Rejected, with a reason" tone="ghost" size={11} />
+      <Arrow marker={`${id}-head`} d="M280 170 L 280 208 L 366 208" />
+      <Pill id={id} x={374} y={194} w={156} label="Rejected, with a reason" tone="ghost" size={11} />
 
-      <circle cx="46" cy="230" r="13" fill={`url(#${id}-card)`} stroke={C.line} />
-      <circle cx="46" cy="226" r="4.5" fill="#26344f" />
-      <path d="M38 238 a8 7 0 0 1 16 0" fill="#26344f" />
-      <text x="70" y="234" fill={C.muted} fontSize="12.5">
+      <circle cx="44" cy="256" r="13" fill={`url(#${id}-card)`} stroke={C.line} />
+      <circle cx="44" cy="252" r="4.5" fill="#2c3c5c" />
+      <path d="M36 264 a8 7 0 0 1 16 0" fill="#2c3c5c" />
+      <text x="68" y="260" fill={C.muted} fontSize="12.5">
         Checked against the company wallet by the finance team
       </text>
-
-      <Caption y={274}>You are notified as soon as a decision is made.</Caption>
     </Panel>
   );
 }
@@ -747,37 +802,53 @@ export function CyclePanel({
   className,
   dayName = "Friday",
   time = "00:00",
+  nextCycle,
 }: {
   className?: string;
   dayName?: string;
   time?: string;
+  /** The genuine next cycle, from the schedule. No invented countdowns. */
+  nextCycle?: { label: string; away: string };
 }) {
   const id = "s6";
   const letters = ["M", "T", "W", "T", "F", "S", "S", "M", "T", "W", "T", "F", "S", "S"];
   const gap = 6;
-  const cellW = (496 - gap * 13) / 14;
-  const cx = (i: number) => 32 + i * (cellW + gap) + cellW / 2;
+  const cellW = (500 - gap * 13) / 14;
+  const cx = (i: number) => 30 + i * (cellW + gap) + cellW / 2;
 
   return (
     <Panel
       id={id}
       className={className}
-      label={`Two weeks of the calendar with both ${dayName}s lit: a subscription approved before the cutoff joins the ${dayName} about to open, one approved after it waits for the following ${dayName}`}
+      kicker={`Step 06 · Every ${dayName}`}
+      title="Investment cycle"
+      right={`Opens ${time} WAT`}
+      label={`Two weeks of the calendar with both ${dayName}s lit, and the real date of the next cycle`}
+      checks={["Activation is automatic — nothing further for you to do"]}
     >
-      <ArrowHead id={`${id}-head`} colour={C.gold} />
-      <Title right={`Opens ${time} WAT`}>Weekly investment cycle</Title>
-
-      <Pill id={id} x={32} y={58} w={162} label="Approved before" tone="gold" size={11.5} glow />
-      <Arrow marker={`${id}-head`} d={`M${cx(4)} 90 L ${cx(4)} 118`} colour={C.gold} />
+      {/* The real next cycle, from getNextCycleStart(). */}
+      <Card id={id} x={30} y={90} w={500} h={54} stroke={C.goldDeep} glow="gold" />
+      <circle cx="52" cy="117" r="4.5" fill={C.gold} />
+      <text x="68" y="112" fill={C.subtle} fontSize="10.5" letterSpacing="0.6">
+        NEXT CYCLE
+      </text>
+      <text x="68" y="130" fill={C.fg} fontSize="14" fontWeight="600">
+        {nextCycle?.label ?? `The coming ${dayName}`}
+      </text>
+      {nextCycle?.away ? (
+        <text x="512" y="123" fill={C.goldSoft} fontSize="13" textAnchor="end" fontWeight="600">
+          {nextCycle.away}
+        </text>
+      ) : null}
 
       {letters.map((letter, i) => {
         const isCycleDay = i === 4 || i === 11;
-        const x = 32 + i * (cellW + gap);
+        const x = 30 + i * (cellW + gap);
         return (
           <React.Fragment key={i}>
             <text
               x={cx(i)}
-              y="128"
+              y="178"
               fill={isCycleDay ? C.goldSoft : C.subtle}
               fontSize="11"
               textAnchor="middle"
@@ -789,7 +860,7 @@ export function CyclePanel({
               <g filter={`url(#${id}-goldGlow)`}>
                 <rect
                   x={x}
-                  y="136"
+                  y="186"
                   width={cellW}
                   height="46"
                   rx="8"
@@ -801,7 +872,7 @@ export function CyclePanel({
             ) : (
               <rect
                 x={x}
-                y="136"
+                y="186"
                 width={cellW}
                 height="46"
                 rx="8"
@@ -810,16 +881,19 @@ export function CyclePanel({
                 strokeWidth="1"
               />
             )}
-            {isCycleDay ? <circle cx={cx(i)} cy="159" r="4" fill={C.gold} /> : null}
+            {isCycleDay ? <circle cx={cx(i)} cy="209" r="4" fill={C.gold} /> : null}
           </React.Fragment>
         );
       })}
 
-      <Arrow marker={`${id}-head`} d={`M${cx(11)} 212 L ${cx(11)} 188`} colour={C.gold} />
-      <Pill id={id} x={330} y={214} w={198} label="Approved at or after" size={11.5} />
-
-      <Caption y={266}>{`A cycle opens every ${dayName} at ${time} West Africa Time.`}</Caption>
-      <Caption y={284}>{`Miss it and your subscription waits for the following ${dayName}.`}</Caption>
+      <circle cx="36" cy="256" r="3.5" fill={C.gold} />
+      <text x="50" y="260" fill={C.muted} fontSize="12">
+        Approved before the cutoff joins the cycle about to open
+      </text>
+      <circle cx="36" cy="280" r="3.5" fill={C.subtle} />
+      <text x="50" y="284" fill={C.muted} fontSize="12">
+        {`Approved at or after it waits for the following ${dayName}`}
+      </text>
     </Panel>
   );
 }
@@ -840,18 +914,21 @@ export function TermPanel({
   const cols = 10;
   const rows = Math.ceil(days / cols);
   const gap = 8;
-  const cellW = (496 - gap * (cols - 1)) / cols;
-  const cellH = 30;
-  const railY = 64 + rows * (cellH + gap) + 14;
+  const cellW = (500 - gap * (cols - 1)) / cols;
+  const cellH = 32;
+  const railY = 96 + rows * (cellH + gap) + 16;
 
   return (
     <Panel
       id={id}
       className={className}
+      accent="emerald"
+      kicker="Step 07 · Active term"
+      title="Investment term"
+      right={`${durationDays} days`}
       label={`A ${durationDays}-day term drawn as one square per day, warming from the cycle opening through to maturity`}
+      checks={["The clock starts when the cycle opens, not when you paid"]}
     >
-      <Title right={`${durationDays} days`}>Investment term</Title>
-
       {Array.from({ length: days }).map((_, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
@@ -860,8 +937,8 @@ export function TermPanel({
         return (
           <g key={i} filter={last ? `url(#${id}-greenGlow)` : undefined}>
             <rect
-              x={32 + col * (cellW + gap)}
-              y={64 + row * (cellH + gap)}
+              x={30 + col * (cellW + gap)}
+              y={96 + row * (cellH + gap)}
               width={cellW}
               height={cellH}
               rx="7"
@@ -869,35 +946,32 @@ export function TermPanel({
               stroke={C.line}
               strokeWidth="1.1"
             />
-            {/* The day squares warm from gold at the open to green at maturity. */}
             <rect
-              x={32 + col * (cellW + gap)}
-              y={64 + row * (cellH + gap)}
+              x={30 + col * (cellW + gap)}
+              y={96 + row * (cellH + gap)}
               width={cellW}
               height={cellH}
               rx="7"
               fill={`url(#${id}-bar)`}
-              opacity={0.1 + t * 0.5}
+              opacity={0.12 + t * 0.55}
             />
           </g>
         );
       })}
 
-      <rect x="32" y={railY} width="496" height="6" rx="3" fill="#111a2c" />
+      <rect x="30" y={railY} width="500" height="6" rx="3" fill="#111a2c" />
       <g filter={`url(#${id}-goldGlow)`}>
-        <rect x="32" y={railY} width="496" height="6" rx="3" fill={`url(#${id}-bar)`} />
+        <rect x="30" y={railY} width="500" height="6" rx="3" fill={`url(#${id}-bar)`} />
       </g>
-      <circle cx="35" cy={railY + 3} r="5" fill={C.gold} />
-      <circle cx="525" cy={railY + 3} r="5" fill={C.emerald} />
+      <circle cx="33" cy={railY + 3} r="5" fill={C.gold} />
+      <circle cx="527" cy={railY + 3} r="5" fill={C.emerald} />
 
-      <text x="32" y={railY + 30} fill={C.goldSoft} fontSize="12">
+      <text x="30" y={railY + 30} fill={C.goldSoft} fontSize="12">
         Cycle opens
       </text>
-      <text x="528" y={railY + 30} fill={C.emeraldSoft} fontSize="12" textAnchor="end">
+      <text x="530" y={railY + 30} fill={C.emeraldSoft} fontSize="12" textAnchor="end">
         Maturity
       </text>
-
-      <Caption y={288}>Your dashboard counts this down for you, day by day.</Caption>
     </Panel>
   );
 }
@@ -920,40 +994,42 @@ export function MaturityPanel({
     <Panel
       id={id}
       className={className}
+      accent="emerald"
+      kicker="Step 08 · Your choice"
+      title="At maturity"
       label={`At maturity the choice splits two ways: withdraw, which moves through review, approval and payment, or roll over into the next ${dayName} cycle`}
+      checks={["Nothing moves until you choose"]}
     >
       <ArrowHead id={`${id}-head`} colour={C.line} />
-      <Title>At maturity</Title>
 
       <Card
         id={id}
-        x={32}
-        y={122}
-        w={132}
-        h={58}
+        x={30}
+        y={162}
+        w={140}
+        h={60}
         stroke={C.emeraldDeep}
         fill={`url(#${id}-greenTint)`}
         glow="emerald"
       />
-      <circle cx="56" cy="151" r="4" fill={C.emerald} />
-      <text x="70" y="156" fill={C.emeraldSoft} fontSize="13">
+      <circle cx="54" cy="192" r="4" fill={C.emerald} />
+      <text x="68" y="197" fill={C.emeraldSoft} fontSize="13">
         Matured
       </text>
 
-      <Arrow marker={`${id}-head`} d="M164 151 L 196 151 L 196 106 L 228 106" />
-      <Arrow marker={`${id}-head`} d="M164 151 L 196 151 L 196 208 L 228 208" />
+      <Arrow marker={`${id}-head`} d="M170 192 L 200 192 L 200 134 L 232 134" />
+      <Arrow marker={`${id}-head`} d="M170 192 L 200 192 L 200 246 L 232 246" />
 
-      {/* Withdraw */}
-      <Card id={id} x={236} y={64} w={292} h={84} />
-      <text x="256" y="92" fill={C.fg} fontSize="13.5" fontWeight="600">
+      <Card id={id} x={240} y={92} w={290} h={84} />
+      <text x="260" y="120" fill={C.fg} fontSize="13.5" fontWeight="600">
         Withdraw
       </text>
       {withdrawal.map((step, i) => (
         <Pill
           key={step}
           id={id}
-          x={256 + i * 88}
-          y={106}
+          x={260 + i * 88}
+          y={134}
           w={78}
           h={24}
           size={10.5}
@@ -963,30 +1039,27 @@ export function MaturityPanel({
         />
       ))}
 
-      {/* Rollover */}
-      <Card id={id} x={236} y={166} w={292} h={84} stroke={C.goldDeep} glow="gold" />
-      <text x="256" y="194" fill={C.fg} fontSize="13.5" fontWeight="600">
+      <Card id={id} x={240} y={204} w={290} h={84} stroke={C.goldDeep} glow="gold" />
+      <text x="260" y="232" fill={C.fg} fontSize="13.5" fontWeight="600">
         Rollover
       </text>
       <path
-        d="M262 222 a12 12 0 1 1 8 12"
+        d="M266 260 a12 12 0 1 1 8 12"
         stroke={C.gold}
         strokeWidth="1.6"
         fill="none"
         strokeLinecap="round"
       />
       <path
-        d="M258 216 l4 6 l7 -3"
+        d="M262 254 l4 6 l7 -3"
         stroke={C.gold}
         strokeWidth="1.6"
         fill="none"
         strokeLinecap="round"
       />
-      <text x="296" y="228" fill={C.goldSoft} fontSize="12">
+      <text x="300" y="266" fill={C.goldSoft} fontSize="12">
         {`Into the next ${dayName} cycle`}
       </text>
-
-      <Caption y={284}>The choice is yours, and nothing happens until you make it.</Caption>
     </Panel>
   );
 }

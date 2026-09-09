@@ -9,7 +9,7 @@ import { SectionEyebrow } from "@/components/visuals/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { getPublicSettings } from "@/lib/settings";
 import { getSession } from "@/lib/auth/session";
-import { getNextCycleStart } from "@/server/queries/public";
+import { getNextCycleStart, getPublicPackages } from "@/server/queries/public";
 import { appUrl } from "@/lib/env";
 import type { Weekday } from "@/lib/time";
 
@@ -21,9 +21,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HowItWorksPage() {
-  const [settings, session] = await Promise.all([
+  const [settings, session, packages] = await Promise.all([
     getPublicSettings(),
     getSession().catch(() => null),
+    getPublicPackages(),
   ]);
   const cycleStart = await getNextCycleStart();
 
@@ -41,6 +42,8 @@ export default async function HowItWorksPage() {
         weekday={settings["cycle.weekday"] as Weekday}
         time={settings["cycle.time"]}
         durationDays={settings["investment.durationDays"]}
+        packages={packages}
+        cycleStart={cycleStart}
         variant="full"
         cycleHref="#cycles"
       />

@@ -51,6 +51,8 @@ export default async function HomePage() {
         weekday={settings["cycle.weekday"] as Weekday}
         time={settings["cycle.time"]}
         durationDays={settings["investment.durationDays"]}
+        packages={packages}
+        cycleStart={cycleStart}
       />
       <CycleSection
         cycleStart={cycleStart}

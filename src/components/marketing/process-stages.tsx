@@ -27,8 +27,11 @@ import {
   PayWithUsdtPanel,
   TermPanel,
   VerifyIdentityPanel,
+  type PanelPackage,
 } from "@/components/visuals/stage-visuals";
-import { WEEKDAY_NAMES, type Weekday } from "@/lib/time";
+import { countdownTo, formatCycleLabel, WEEKDAY_NAMES, type Weekday } from "@/lib/time";
+import { formatUSD } from "@/lib/money";
+import type { PublicPackage } from "@/server/queries/public";
 import type { SessionUser } from "@/lib/auth/session";
 
 interface Stage {
@@ -54,10 +57,14 @@ function buildStages({
   dayName,
   time,
   durationDays,
+  packages,
+  nextCycle,
 }: {
   dayName: string;
   time: string;
   durationDays: number;
+  packages: PanelPackage[];
+  nextCycle?: { label: string; away: string };
 }): Stage[] {
   return [
     {
@@ -91,7 +98,7 @@ function buildStages({
         `Capital, return and the ${durationDays}-day term are recorded on your investment as you subscribe.`,
         "That record is what governs your investment from then on.",
       ],
-      panel: <ChoosePackagePanel durationDays={durationDays} />,
+      panel: <ChoosePackagePanel durationDays={durationDays} packages={packages} />,
     },
     {
       icon: Wallet,
@@ -124,7 +131,7 @@ function buildStages({
         `Approved at or after it — waits for the following ${dayName}.`,
         "Activation is automatic. There is nothing further for you to do.",
       ],
-      panel: <CyclePanel dayName={dayName} time={time} />,
+      panel: <CyclePanel dayName={dayName} time={time} nextCycle={nextCycle} />,
     },
     {
       icon: Timer,
@@ -157,6 +164,8 @@ export function ProcessStages({
   time,
   durationDays,
   videoUrl,
+  packages = [],
+  cycleStart,
   /** `compact` is the homepage: pictures and one line each. `full` adds the detail. */
   variant = "compact",
   cycleHref = "/how-it-works#cycles",
@@ -166,13 +175,38 @@ export function ProcessStages({
   time?: string;
   durationDays?: number;
   videoUrl?: string;
+  /** The real active packages, so the artwork shows real figures. */
+  packages?: PublicPackage[];
+  /** The real next cycle opening, so the artwork shows a real date. */
+  cycleStart?: Date;
   variant?: "compact" | "full";
   cycleHref?: string;
 }) {
   const dayName = (weekday != null ? WEEKDAY_NAMES[weekday] : undefined) ?? "Friday";
   const term = durationDays ?? 30;
-  const stages = buildStages({ dayName, time: time ?? "00:00", durationDays: term });
   const full = variant === "full";
+
+  // Real figures rather than placeholders: these come from the database and the
+  // cycle schedule, so the artwork corrects itself when either changes.
+  const panelPackages: PanelPackage[] = packages.map((pkg) => ({
+    name: pkg.name,
+    capital: formatUSD(pkg.minimumCapital),
+    returnPct: `${pkg.returnPercentage}%`,
+    maturity: formatUSD(pkg.maturityAmount),
+    badge: pkg.badge,
+  }));
+
+  const nextCycle = cycleStart
+    ? { label: formatCycleLabel(cycleStart), away: describeGap(cycleStart) }
+    : undefined;
+
+  const stages = buildStages({
+    dayName,
+    time: time ?? "00:00",
+    durationDays: term,
+    packages: panelPackages,
+    nextCycle,
+  });
 
   return (
     <section id="how-it-works" className="relative py-16 sm:py-20 lg:py-24">
@@ -281,6 +315,14 @@ export function ProcessStages({
       </div>
     </section>
   );
+}
+
+/** How far off the next cycle is, in plain words. Nothing invented — it is the schedule. */
+function describeGap(target: Date): string {
+  const { days, hours } = countdownTo(target);
+  if (days > 0) return `in ${days}d ${hours}h`;
+  if (hours > 0) return `in ${hours}h`;
+  return "opening now";
 }
 
 function StageLabel({ icon: Icon, index }: { icon: LucideIcon; index: number }) {
