@@ -17,6 +17,15 @@ import { Accordion } from "@/components/ui/interactive";
 import { EmptyState } from "@/components/ui/feedback";
 import { SectionEyebrow, Hairline, NetworkNodes } from "@/components/visuals/decor";
 import { AiInfrastructureVisual, BrandVisual } from "@/components/visuals/illustrations";
+import { Reveal } from "@/components/visuals/reveal";
+import {
+  CyclesDemo,
+  ExecutionDemo,
+  RecordsDemo,
+  SecurityDemo,
+  SupportDemo,
+  TrackingDemo,
+} from "@/components/visuals/benefit-demos";
 import type { PublicFaq } from "@/server/queries/public";
 import type { SettingsMap } from "@/lib/settings";
 
@@ -27,31 +36,37 @@ import type { SettingsMap } from "@/lib/settings";
 const BENEFITS = [
   {
     icon: Cpu,
+    demo: ExecutionDemo,
     title: "Automated Market Execution",
     body: "Trading is carried out by an externally operated automated system across supported markets. This platform records and administers your subscription.",
   },
   {
     icon: Repeat,
+    demo: CyclesDemo,
     title: "Structured Investment Cycles",
     body: "Every subscription joins a defined weekly cycle and runs for a fixed term, so you always know when your investment starts and ends.",
   },
   {
     icon: ShieldCheck,
+    demo: SecurityDemo,
     title: "Secure Account Management",
     body: "Identity-verified accounts, hashed credentials, session controls and private document storage protect your account.",
   },
   {
     icon: FileSpreadsheet,
+    demo: TrackingDemo,
     title: "Transparent Subscription Tracking",
     body: "Payment status, investment status, start date, maturity date and remaining time are all visible from one dashboard.",
   },
   {
     icon: Ticket,
+    demo: RecordsDemo,
     title: "Digital Investment Records",
     body: "Every subscription, payment, withdrawal and rollover carries a unique reference and a full transaction history.",
   },
   {
     icon: Headphones,
+    demo: SupportDemo,
     title: "Dedicated Support",
     body: "Raise a support ticket from your dashboard, or reach the team on WhatsApp and email during support hours.",
   },
@@ -73,17 +88,28 @@ export function WhyMonoceros() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {BENEFITS.map((benefit) => (
-            <article key={benefit.title} className="surface group p-6">
-              <span className="grid size-10 place-items-center rounded-lg border border-ink-600 bg-ink-850 text-accent-300 transition-colors group-hover:border-accent-700">
-                <benefit.icon className="size-4.5" aria-hidden />
-              </span>
-              <h3 className="mt-4 text-[15px] font-semibold text-fg">{benefit.title}</h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-fg-muted">{benefit.body}</p>
-            </article>
-          ))}
-        </div>
+        {/* Reveal gates the demonstrations: they stay paused until the section
+            is actually on screen, so six loops are not running unseen. */}
+        <Reveal>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {BENEFITS.map((benefit) => (
+              <article key={benefit.title} className="surface group overflow-hidden">
+                <div className="border-b border-ink-700/50 bg-ink-950/50 px-4 py-3">
+                  <benefit.demo />
+                </div>
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-ink-600 bg-ink-850 text-accent-300 transition-colors group-hover:border-accent-700">
+                      <benefit.icon className="size-4" aria-hidden />
+                    </span>
+                    <h3 className="text-[15px] font-semibold text-fg">{benefit.title}</h3>
+                  </div>
+                  <p className="mt-3 text-[13px] leading-relaxed text-fg-muted">{benefit.body}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Reveal>
       </div>
     </section>
   );

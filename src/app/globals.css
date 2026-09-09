@@ -283,3 +283,89 @@
     }
   }
 }
+
+/* ==========================================================================
+   Benefit demonstrations
+
+   Small looping SVG scenes that act out what each benefit card claims. Every
+   animation is paused until its block scrolls into view, and every one ends on
+   its resting state — so the reduced-motion rule in the base layer, which cuts
+   duration to nothing and iteration count to one, leaves a finished picture
+   rather than a half-drawn one.
+   ========================================================================== */
+
+@keyframes demo-travel {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(44px); opacity: 0; }
+}
+
+@keyframes demo-fill {
+  0% { transform: scaleX(0); }
+  70% { transform: scaleX(1); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes demo-drain {
+  0% { transform: scaleX(1); }
+  70% { transform: scaleX(0.12); }
+  100% { transform: scaleX(0.12); }
+}
+
+@keyframes demo-step {
+  0%, 26% { transform: translateX(0); }
+  33%, 59% { transform: translateX(92px); }
+  66%, 100% { transform: translateX(184px); }
+}
+
+@keyframes demo-appear {
+  0% { opacity: 0; transform: translateY(6px); }
+  22%, 100% { opacity: 1; transform: none; }
+}
+
+@keyframes demo-sweep {
+  0% { transform: translateX(-30px); opacity: 0; }
+  20% { opacity: 0.85; }
+  80% { opacity: 0.85; }
+  100% { transform: translateX(96px); opacity: 0; }
+}
+
+@keyframes demo-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+@keyframes demo-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@keyframes demo-draw {
+  0% { stroke-dashoffset: var(--demo-len, 60); }
+  60%, 100% { stroke-dashoffset: 0; }
+}
+
+@layer components {
+  /* Nothing moves until the reader can actually see it. */
+  .demo-anim {
+    animation-play-state: paused;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+
+  .reveal[data-revealed="true"] .demo-anim {
+    animation-play-state: running;
+  }
+
+  .demo-travel { animation-name: demo-travel; animation-duration: 3.2s; animation-timing-function: linear; }
+  .demo-fill { animation-name: demo-fill; animation-duration: 4.5s; transform-origin: left center; }
+  .demo-drain { animation-name: demo-drain; animation-duration: 4.5s; transform-origin: left center; }
+  .demo-step { animation-name: demo-step; animation-duration: 4.8s; }
+  .demo-appear { animation-name: demo-appear; animation-duration: 3.6s; }
+  .demo-sweep { animation-name: demo-sweep; animation-duration: 2.8s; animation-timing-function: linear; }
+  .demo-bounce { animation-name: demo-bounce; animation-duration: 1.2s; }
+  .demo-glow { animation-name: demo-glow; animation-duration: 2.6s; }
+  .demo-draw { animation-name: demo-draw; animation-duration: 3.4s; }
+  .demo-dash { animation-name: dash; animation-duration: 6s; animation-timing-function: linear; }
+}

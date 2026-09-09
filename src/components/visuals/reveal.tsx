@@ -40,18 +40,30 @@ export function Reveal({
 
     setRevealed(false);
 
+    const show = () => {
+      setRevealed(true);
+      observer.disconnect();
+      clearTimeout(failsafe);
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setRevealed(true);
-          observer.disconnect();
-        }
+        if (entries.some((entry) => entry.isIntersecting)) show();
       },
       { rootMargin, threshold: 0 },
     );
 
+    // Once hidden, the observer is the only thing that can bring this back. If
+    // it never reports — a page that is never composited, a browser that stays
+    // quiet — the content would stay invisible for good. Rather than trust it
+    // completely, give up waiting after a few seconds and show everything.
+    const failsafe = window.setTimeout(show, 4000);
+
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(failsafe);
+    };
   }, [rootMargin]);
 
   return (
