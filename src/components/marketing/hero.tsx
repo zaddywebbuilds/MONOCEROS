@@ -2,7 +2,7 @@ import * as React from "react";
 import { ArrowRight, ShieldCheck, Clock3, FileText } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
-import { HeroVisual } from "@/components/visuals/illustrations";
+import { HeroVideo } from "@/components/visuals/hero-video";
 import { GlowOrbs, GridBackdrop, Particles } from "@/components/visuals/decor";
 import type { SettingsMap } from "@/lib/settings";
 
@@ -67,7 +67,20 @@ export function Hero({ settings }: { settings: SettingsMap }) {
             aria-hidden
             className="absolute -inset-6 rounded-[2rem] bg-accent-500/[0.05] blur-3xl"
           />
-          <HeroVisual className="relative" />
+          {/* The footage is portrait, so it is cropped to a panel rather than
+              stretched — short on phones, taller alongside the copy on desktop. */}
+          <div className="surface relative aspect-[16/10] overflow-hidden lg:aspect-[4/5]">
+            <HeroVideo />
+            {/* Sinks the bottom edge into the page instead of ending on a line. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/10 to-transparent"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-ink-600/50"
+            />
+          </div>
         </div>
       </div>
     </section>
