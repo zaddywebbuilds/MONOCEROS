@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/marketing/prose";
 import { HowItWorks } from "@/components/marketing/how-it-works";
+import { ProcessStages } from "@/components/marketing/process-stages";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import { InfrastructureSection } from "@/components/marketing/sections";
 import { SecurityVisual } from "@/components/visuals/illustrations";
@@ -40,8 +41,13 @@ export default async function HowItWorksPage() {
         user={session?.user ?? null}
         weekday={settings["cycle.weekday"] as Weekday}
         durationDays={settings["investment.durationDays"]}
-        variant="detailed"
         cycleHref="#cycles"
+      />
+
+      <ProcessStages
+        weekday={settings["cycle.weekday"] as Weekday}
+        time={settings["cycle.time"]}
+        durationDays={settings["investment.durationDays"]}
       />
 
       <CycleSection

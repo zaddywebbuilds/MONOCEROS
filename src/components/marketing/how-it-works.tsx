@@ -28,8 +28,6 @@ export interface WorkflowStep {
   title: string;
   /** One short sentence. This is all the homepage shows. */
   description: string;
-  /** Extra stage detail, added only on the full How It Works page. */
-  detail: string;
   /** Small label on the card. Reserved for the three stages that define the model. */
   badge?: string;
   /** Emerald is a status colour on this site, so it only marks verified/live stages. */
@@ -51,52 +49,39 @@ export function workflowSteps({
       icon: UserPlus,
       title: "Create account",
       description: "Register with your basic personal and contact information.",
-      detail:
-        "Your name, date of birth, Nigerian mobile number and email address. Confirm your email to activate the account.",
     },
     {
       icon: BadgeCheck,
       title: "Verify identity",
       description: "Complete your NIN and identity verification before investing.",
-      detail:
-        "Compliance reviews every submission by hand. If anything is declined you are told why, and you can submit again.",
     },
     {
       icon: Layers,
       title: "Choose package",
       description: "Select the investment package that suits your preferred capital level.",
-      detail:
-        "The package terms — capital, return and term length — are recorded on your investment at the moment you subscribe.",
     },
     {
       icon: Wallet,
       title: "Pay with USDT",
       description: "Send the required amount to the displayed company USDT wallet.",
-      detail:
-        "Pay on the network shown at checkout, then submit your transaction hash so the transfer can be matched to your subscription.",
       badge: "USDT",
     },
     {
       icon: CircleCheck,
       title: "Payment verified",
       description: "Your payment is reviewed and confirmed by the Monoceros team.",
-      detail:
-        "Finance checks the transfer against the company wallet manually. You are notified as soon as a decision is made.",
       tone: "status",
     },
     {
       icon: CalendarDays,
       title: `Join ${dayName} cycle`,
       description: `Approved subscriptions enter the next available ${dayName} investment cycle.`,
-      detail:
-        "Your subscription is queued and activates automatically when the cycle opens. Nothing further is needed from you.",
       badge: `Every ${dayName}`,
     },
     {
       icon: Timer,
       title: `Track ${durationDays} days`,
       description: "Follow your active investment and maturity countdown from your dashboard.",
-      detail: `The ${durationDays}-day term runs from the cycle opening timestamp. Your dashboard shows the start date, the time remaining and the maturity amount.`,
       badge: `${durationDays} Days`,
       tone: "status",
     },
@@ -104,8 +89,6 @@ export function workflowSteps({
       icon: Repeat2,
       title: "Withdraw or rollover",
       description: "At maturity, request withdrawal or continue your funds into another cycle.",
-      detail:
-        "Withdraw the matured amount to your own wallet, or roll it into the next cycle without moving the funds off the platform.",
     },
   ];
 }
@@ -152,21 +135,17 @@ export function HowItWorks({
   user = null,
   weekday,
   durationDays,
-  variant = "compact",
   cycleHref = "/how-it-works#cycles",
 }: {
   videoUrl?: string;
   user?: SessionUser | null;
   weekday?: Weekday;
   durationDays?: number;
-  /** `detailed` adds a second line of stage detail to every card. */
-  variant?: "compact" | "detailed";
   cycleHref?: string;
 }) {
   const dayName = (weekday != null ? WEEKDAY_NAMES[weekday] : undefined) ?? "Friday";
   const term = durationDays ?? 30;
   const steps = workflowSteps({ dayName, durationDays: term });
-  const detailed = variant === "detailed";
 
   return (
     <section id="how-it-works" className="relative py-16 sm:py-20 lg:py-24">
@@ -184,9 +163,9 @@ export function HowItWorks({
           </header>
 
           <div className="mt-12 lg:mt-16">
-            <StepGrid steps={steps.slice(0, 4)} offset={0} detailed={detailed} />
+            <StepGrid steps={steps.slice(0, 4)} offset={0} />
             <WrapConnector />
-            <StepGrid steps={steps.slice(4)} offset={4} detailed={detailed} />
+            <StepGrid steps={steps.slice(4)} offset={4} />
           </div>
 
           <p
@@ -222,15 +201,7 @@ export function HowItWorks({
 }
 
 /** One row of four steps. Two of these, stacked, make the desktop journey. */
-function StepGrid({
-  steps,
-  offset,
-  detailed,
-}: {
-  steps: WorkflowStep[];
-  offset: number;
-  detailed: boolean;
-}) {
+function StepGrid({ steps, offset }: { steps: WorkflowStep[]; offset: number }) {
   return (
     <ol
       role="list"
@@ -248,7 +219,6 @@ function StepGrid({
           number={offset + index + 1}
           isFirstRow={offset === 0}
           isLast={offset + index === 7}
-          detailed={detailed}
         />
       ))}
     </ol>
@@ -261,14 +231,12 @@ function StepItem({
   number,
   isFirstRow,
   isLast,
-  detailed,
 }: {
   step: WorkflowStep;
   index: number;
   number: number;
   isFirstRow: boolean;
   isLast: boolean;
-  detailed: boolean;
 }) {
   const rail = RAIL[index];
   const status = step.tone === "status";
@@ -365,12 +333,6 @@ function StepItem({
 
         <h3 className="mt-2 text-[14.5px] font-semibold text-fg">{step.title}</h3>
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-fg-muted">{step.description}</p>
-
-        {detailed ? (
-          <p className="mt-3 border-t border-ink-700/60 pt-3 text-[12px] leading-relaxed text-fg-subtle">
-            {step.detail}
-          </p>
-        ) : null}
       </div>
     </li>
   );
