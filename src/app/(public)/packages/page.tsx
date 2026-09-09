@@ -14,7 +14,7 @@ import type { Weekday } from "@/lib/time";
 export const metadata: Metadata = {
   title: "Investment Packages",
   description:
-    "Compare Monoceros investment packages: capital, return percentage, maturity value and term length. Package terms are recorded on your investment when you subscribe.",
+    "Compare packages by capital, return, maturity value and term. Package terms are recorded on your investment the moment you subscribe.",
   alternates: { canonical: `${appUrl}/packages` },
 };
 

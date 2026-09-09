@@ -17,7 +17,7 @@ import { formatCycleLabel, maturityFor, type Weekday } from "@/lib/time";
 export const metadata: Metadata = {
   title: "How It Works",
   description:
-    "From registration and identity verification through USDT payment, manual verification, the weekly investment cycle and the 30-day term, to withdrawal or rollover at maturity.",
+    "Registration, identity verification, USDT payment and manual review, then the weekly cycle, the 30-day term, and withdrawal or rollover at maturity.",
   alternates: { canonical: `${appUrl}/how-it-works` },
 };
 

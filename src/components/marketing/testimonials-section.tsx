@@ -58,21 +58,29 @@ export function TestimonialsSection({
   const shown = preview ? testimonials.slice(0, 3) : testimonials;
 
   return (
-    <section aria-labelledby="testimonials-heading" className="relative overflow-hidden py-10 sm:py-14">
+    <section
+      // On its own page the PageHeader above supplies the heading, so the
+      // section labels itself instead of pointing at a heading it no longer draws.
+      aria-labelledby={preview ? "testimonials-heading" : undefined}
+      aria-label={preview ? undefined : "Investor testimonials"}
+      className="relative overflow-hidden py-10 sm:py-14"
+    >
       <Hairline />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-12 text-center">
-          <SectionEyebrow>Investor testimonials</SectionEyebrow>
-          <h2
-            id="testimonials-heading"
-            className="mt-3 text-3xl font-bold tracking-tight text-fg sm:text-4xl"
-          >
-            What our investors say
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-fg-muted">
-            Real accounts and receipts from verified Monoceros investors.
-          </p>
-        </div>
+        {preview ? (
+          <div className="mb-12 text-center">
+            <SectionEyebrow>Investor testimonials</SectionEyebrow>
+            <h2
+              id="testimonials-heading"
+              className="mt-3 text-3xl font-bold tracking-tight text-fg sm:text-4xl"
+            >
+              What our investors say
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-fg-muted">
+              Published accounts from verified Monoceros investors.
+            </p>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((t) => (

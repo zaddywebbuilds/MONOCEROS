@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Hero } from "@/components/marketing/hero";
+import { StructuredData } from "@/components/site/structured-data";
 import { MarketTicker } from "@/components/marketing/market-ticker";
 import { PackagesSection } from "@/components/marketing/packages-section";
 import { ProcessStages } from "@/components/marketing/process-stages";
@@ -20,9 +21,9 @@ import { appUrl } from "@/lib/env";
 import type { Weekday } from "@/lib/time";
 
 export const metadata: Metadata = {
-  title: "Automated Market Intelligence, Structured Investment Management",
+  title: "Structured Investment Management",
   description:
-    "Monoceros manages investment subscriptions powered by an externally operated automated trading infrastructure: verified accounts, weekly investment cycles and clear 30-day terms.",
+    "Investment subscriptions with verified accounts, weekly cycles and clear 30-day terms. Trading is handled by an externally operated automated system.",
   alternates: { canonical: `${appUrl}/` },
 };
 
@@ -42,6 +43,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <StructuredData settings={settings} />
       <Hero settings={settings} />
       <MarketTicker snapshot={market} />
       <PackagesSection packages={packages} user={session?.user ?? null} />

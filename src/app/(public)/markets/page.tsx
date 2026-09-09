@@ -11,7 +11,7 @@ import { appUrl } from "@/lib/env";
 export const metadata: Metadata = {
   title: "Live Markets",
   description:
-    "Public market data for the digital assets Monoceros references, provided for information only. Market data does not represent the performance of Monoceros investment subscriptions.",
+    "Public market data for the digital assets Monoceros references, for information only. It does not represent the performance of any subscription.",
   alternates: { canonical: `${appUrl}/markets` },
 };
 

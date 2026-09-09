@@ -9,11 +9,22 @@ import { getPublicSettings } from "@/lib/settings";
 import { getContentBlock } from "@/server/queries/public";
 import { appUrl } from "@/lib/env";
 
+/** Trims to the last whole word inside the length search results actually show. */
+function clampDescription(text: string, limit = 155): string {
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 60 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSettings();
   return {
     title: `About ${settings["company.name"]}`,
-    description: settings["company.description"],
+    // The setting is editable prose and can run long; a meta description is
+    // truncated by search engines past roughly 160 characters, so clamp it on a
+    // word boundary here rather than constraining what an administrator writes.
+    description: clampDescription(settings["company.description"]),
     alternates: { canonical: `${appUrl}/about` },
   };
 }
