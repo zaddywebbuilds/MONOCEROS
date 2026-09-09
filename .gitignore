@@ -44,3 +44,6 @@ CLAUDE.md
 
 .vercel
 .env*
+
+# Source video masters kept locally; the site serves processed copies from public/media.
+/pinvideosaver_*.mp4
