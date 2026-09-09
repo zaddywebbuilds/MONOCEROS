@@ -6,7 +6,6 @@ import { PackagesSection } from "@/components/marketing/packages-section";
 import { HowItWorks } from "@/components/marketing/how-it-works";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import {
-  AboutPreview,
   FaqSection,
   InfrastructureSection,
   SupportSection,
@@ -56,9 +55,10 @@ export default async function HomePage() {
       <InfrastructureSection />
       <WhyMonoceros />
       <TestimonialsSection testimonials={testimonials} preview />
+      <FaqSection faqs={faqs} limit={4} showAllLink />
+      {/* Support closes the page as the call to action. The About preview it
+          replaced only restated /about, which the footer already links to. */}
       <SupportSection settings={settings} />
-      <FaqSection faqs={faqs} limit={6} showAllLink />
-      <AboutPreview settings={settings} />
     </>
   );
 }

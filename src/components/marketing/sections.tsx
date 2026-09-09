@@ -64,12 +64,12 @@ export function WhyMonoceros() {
         <div className="max-w-2xl">
           <SectionEyebrow>Why Monoceros</SectionEyebrow>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-            Built for clarity, not for hype
+            Built for clarity
           </h2>
           <p className="mt-4 text-[15px] leading-relaxed text-fg-muted">
-            We publish what the platform actually does. You will not find performance counters,
-            testimonials or activity feeds on this site, because we do not have verified figures to
-            put behind them.
+            Every package states its capital, return and term up front, and your dashboard shows
+            exactly where your subscription stands at any moment. No performance counters, no
+            invented figures — just the terms you agreed to and the record of what has happened.
           </p>
         </div>
 
@@ -99,21 +99,21 @@ export function InfrastructureSection() {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-14">
           <div>
-            <SectionEyebrow>Architecture</SectionEyebrow>
+            <SectionEyebrow>Infrastructure</SectionEyebrow>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
-              Where the trading happens, and where this platform sits
+              How Monoceros works with our trading infrastructure
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-fg-muted">
-              The automated trading operation runs outside this website. Monoceros does not connect
-              to it, execute orders, or report trade activity. What this platform does is manage the
-              investor side: subscriptions, identity verification, payments, weekly cycles, maturity
-              and settlement records.
+              Monoceros provides the investor-facing account and subscription experience, while
+              automated market execution is handled through our separate trading infrastructure.
+              Keeping the two apart means your records, terms and settlement history stay intact
+              and independently auditable.
             </p>
 
             <dl className="mt-7 grid gap-4 sm:grid-cols-2">
               <div className="surface-muted p-4">
                 <dt className="text-[11px] uppercase tracking-[0.14em] text-fg-subtle">
-                  Handled externally
+                  Trading infrastructure
                 </dt>
                 <dd className="mt-2 text-[13px] leading-relaxed text-fg-muted">
                   Market analysis and automated execution across supported markets.
@@ -121,11 +121,11 @@ export function InfrastructureSection() {
               </div>
               <div className="surface-muted p-4">
                 <dt className="text-[11px] uppercase tracking-[0.14em] text-fg-subtle">
-                  Handled here
+                  This platform
                 </dt>
                 <dd className="mt-2 text-[13px] leading-relaxed text-fg-muted">
-                  Accounts, KYC, subscriptions, payments, cycles, maturity, withdrawals and
-                  rollovers.
+                  Accounts, verification, subscriptions, payments, cycles, maturity, withdrawals
+                  and rollovers.
                 </dd>
               </div>
             </dl>
@@ -133,8 +133,8 @@ export function InfrastructureSection() {
             <div className="mt-6 flex items-center gap-4">
               <NetworkNodes className="h-20 w-28 shrink-0 opacity-80" />
               <p className="text-[12.5px] leading-relaxed text-fg-subtle">
-                The platform is structured so external broker or API integrations could be added
-                later without changing how your existing records work.
+                Your investment terms are set by the package you choose, so they stay fixed for the
+                full term regardless of day-to-day market movement.
               </p>
             </div>
           </div>

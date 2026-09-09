@@ -86,11 +86,21 @@ export function MarketTicker({ snapshot }: { snapshot: MarketSnapshot }) {
       aria-label="Live market prices"
       className="relative border-y border-ink-700/70 bg-ink-900/50"
     >
-      <div className="mask-fade-x overflow-hidden">
-        <div className="flex w-max animate-marquee motion-reduce:animate-none">
-          {loop.map((asset, index) => (
-            <TickerItem key={`${asset.id}-${index}`} asset={asset} />
-          ))}
+      <div className="flex items-stretch">
+        <p className="z-10 flex shrink-0 items-center gap-2 border-r border-ink-700/70 bg-ink-900/80 px-4 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-fg-muted">
+          <span aria-hidden className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent-400 opacity-75 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-accent-400" />
+          </span>
+          Live market
+        </p>
+
+        <div className="mask-fade-x min-w-0 flex-1 overflow-hidden">
+          <div className="flex w-max animate-marquee motion-reduce:animate-none">
+            {loop.map((asset, index) => (
+              <TickerItem key={`${asset.id}-${index}`} asset={asset} />
+            ))}
+          </div>
         </div>
       </div>
       <p className="border-t border-ink-700/50 px-4 py-2 text-center text-[11px] text-fg-subtle">

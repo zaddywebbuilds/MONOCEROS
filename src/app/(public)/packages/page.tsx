@@ -33,12 +33,12 @@ export default async function PackagesPage() {
       <PageHeader
         eyebrow="Subscriptions"
         title="Investment packages"
-        description="Each package defines its capital, return percentage, maturity value and term. Those figures are copied onto your investment record at the moment you subscribe and never change afterwards."
+        description="Each package sets its own capital, return percentage, maturity value and term. Your package terms are locked in when your subscription is confirmed, and stay fixed for the full term."
       >
         <div className="mt-7 max-w-2xl">
           <InfoNote tone="gold">
-            Maturity values are set by the package you choose. They are not derived from, and do not
-            move with, the performance of the external automated trading system.
+            Your maturity value is set by the package you choose and stays fixed for the full term.
+            Investing carries risk, including the risk of losing capital.
           </InfoNote>
         </div>
       </PageHeader>

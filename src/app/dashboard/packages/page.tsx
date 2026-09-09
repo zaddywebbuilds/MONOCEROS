@@ -29,7 +29,7 @@ export default async function DashboardPackagesPage() {
     <DashboardPage>
       <PageTitle
         title="Investment packages"
-        description="Package terms are copied onto your investment when you subscribe, and never change afterwards."
+        description="Your package terms are locked in when your subscription is confirmed, and stay fixed for the full term."
       />
 
       {!kycApproved ? (

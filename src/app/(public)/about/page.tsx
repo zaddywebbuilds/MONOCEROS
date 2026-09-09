@@ -17,21 +17,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const DEFAULT_ABOUT = `## What Monoceros is
+const DEFAULT_ABOUT = `## What Monoceros does
 
 Monoceros is an investment subscription management platform. It gives investors one place to open a verified account, choose an investment package, submit and track a payment, follow a fixed investment term, and request a withdrawal or a rollover at maturity.
 
-## What Monoceros is not
+## How Monoceros works with our trading infrastructure
 
-Monoceros is not a broker and not a trading terminal. The automated trading operation runs outside this website. This platform does not connect to it, place orders, or report trade activity, and it does not display trade histories or live profit figures, because it does not have them.
+Monoceros provides the investor-facing account and subscription experience, while automated market execution is handled through our separate trading infrastructure.
 
-## How we talk about performance
+This separation is deliberate. Your package terms, payment record, start date and maturity date are set when you subscribe and stay fixed for the full term, so what you agreed to is never affected by day-to-day market movement.
 
-We publish the terms of each investment package and nothing more. You will not find win rates, investor counters, testimonials or "recent withdrawal" popups on this site. Any performance claim would need evidence behind it, and where we do not have that evidence we say nothing rather than something impressive.
+## How we talk about returns
+
+Each package states its capital, return percentage, term length and maturity value up front, and those are the figures your investment is held to. We publish the terms and the record of what has happened on your account — not projections, win rates or activity counters.
+
+Investing carries risk, including the risk of losing capital. Please read the Risk Disclosure before subscribing.
 
 ## How your money and data are handled
 
-- Payments go to a single company wallet on a network published on the payment page, and every payment is verified by a person.
+- Payments go to a company wallet on the network you select, and every payment is verified by a person before your subscription is activated.
 - Identity documents are held in private storage, reachable only through short-lived links, and every access is recorded.
 - Every administrative decision — an approval, a rejection, a settings change — is written to an audit log that cannot be deleted from the admin interface.
 

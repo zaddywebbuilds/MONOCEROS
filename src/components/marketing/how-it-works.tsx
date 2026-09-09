@@ -55,7 +55,7 @@ export const WORKFLOW_STEPS = [
     icon: Timer,
     title: "Track Your 30-Day Term",
     description:
-      "Your dashboard shows the start date, maturity date and remaining time, calculated from server timestamps.",
+      "Your dashboard tracks the remaining time automatically, from your start date through to maturity.",
   },
   {
     icon: CircleDollarSign,
