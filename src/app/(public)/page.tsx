@@ -45,7 +45,12 @@ export default async function HomePage() {
       <Hero settings={settings} />
       <MarketTicker snapshot={market} />
       <PackagesSection packages={packages} user={session?.user ?? null} />
-      <HowItWorks videoUrl={settings["content.explainerVideoUrl"] || undefined} />
+      <HowItWorks
+        videoUrl={settings["content.explainerVideoUrl"] || undefined}
+        user={session?.user ?? null}
+        weekday={settings["cycle.weekday"] as Weekday}
+        durationDays={settings["investment.durationDays"]}
+      />
       <CycleSection
         cycleStart={cycleStart}
         weekday={settings["cycle.weekday"] as Weekday}

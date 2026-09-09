@@ -8,6 +8,7 @@ import { SecurityVisual } from "@/components/visuals/illustrations";
 import { SectionEyebrow } from "@/components/visuals/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { getPublicSettings } from "@/lib/settings";
+import { getSession } from "@/lib/auth/session";
 import { getNextCycleStart } from "@/server/queries/public";
 import { appUrl } from "@/lib/env";
 import type { Weekday } from "@/lib/time";
@@ -20,7 +21,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HowItWorksPage() {
-  const settings = await getPublicSettings();
+  const [settings, session] = await Promise.all([
+    getPublicSettings(),
+    getSession().catch(() => null),
+  ]);
   const cycleStart = await getNextCycleStart();
 
   return (
@@ -31,7 +35,14 @@ export default async function HowItWorksPage() {
         description="Every stage of a Monoceros subscription, what happens at each one, and who does it."
       />
 
-      <HowItWorks videoUrl={settings["content.explainerVideoUrl"] || undefined} />
+      <HowItWorks
+        videoUrl={settings["content.explainerVideoUrl"] || undefined}
+        user={session?.user ?? null}
+        weekday={settings["cycle.weekday"] as Weekday}
+        durationDays={settings["investment.durationDays"]}
+        variant="detailed"
+        cycleHref="#cycles"
+      />
 
       <CycleSection
         cycleStart={cycleStart}
