@@ -580,10 +580,20 @@ export function ChoosePackagePanel({
       className={className}
       kicker="Step 03 · Packages"
       title="Investment packages"
-      right={`${durationDays}-day term`}
+      right={
+        packages.length > 3
+          ? `${packages.length} packages · ${durationDays}-day term`
+          : `${durationDays}-day term`
+      }
       label="The available investment packages, showing the capital, return and maturity value of each"
       checks={["Terms are recorded on your investment the moment you subscribe"]}
     >
+      {packages.length > shown.length ? (
+        <text x={528} y={296} fill={C.goldSoft} fontSize="11.5" textAnchor="end">
+          {`+${packages.length - shown.length} more`}
+        </text>
+      ) : null}
+
       {(shown.length ? shown : [null, null, null]).map((pkg, i) => {
         const x = 30 + i * 172;
         const selected = i === featured;

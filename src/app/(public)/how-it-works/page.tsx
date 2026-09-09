@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/marketing/prose";
 import { ProcessStages } from "@/components/marketing/process-stages";
+import { ReturnCalculator } from "@/components/marketing/return-calculator";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import { InfrastructureSection } from "@/components/marketing/sections";
 import { SecurityVisual } from "@/components/visuals/illustrations";
@@ -11,7 +12,7 @@ import { getPublicSettings } from "@/lib/settings";
 import { getSession } from "@/lib/auth/session";
 import { getNextCycleStart, getPublicPackages } from "@/server/queries/public";
 import { appUrl } from "@/lib/env";
-import type { Weekday } from "@/lib/time";
+import { formatCycleLabel, maturityFor, type Weekday } from "@/lib/time";
 
 export const metadata: Metadata = {
   title: "How It Works",
@@ -28,6 +29,15 @@ export default async function HowItWorksPage() {
   ]);
   const cycleStart = await getNextCycleStart();
 
+  // Real package terms, flattened for the client-side calculator.
+  const calculatorPackages = packages.map((pkg) => ({
+    name: pkg.name,
+    slug: pkg.slug,
+    capital: Number(pkg.minimumCapital),
+    returnPct: Number(pkg.returnPercentage),
+    maturity: Number(pkg.maturityAmount),
+  }));
+
   return (
     <>
       <PageHeader
@@ -35,6 +45,33 @@ export default async function HowItWorksPage() {
         title="How it works, end to end"
         description="Every stage of a Monoceros subscription, what happens at each one, and who does it."
       />
+
+      <section id="calculator" className="relative py-10 sm:py-12 lg:py-14">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <SectionEyebrow>Calculator</SectionEyebrow>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">
+              Work out what you would receive
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-fg-muted">
+              Set the amount you have in mind and see which packages it buys, what each one pays at
+              maturity, and the dates that would apply if you subscribed today.
+            </p>
+          </div>
+
+          <div className="mt-10">
+            <ReturnCalculator
+              packages={calculatorPackages}
+              cycleLabel={formatCycleLabel(cycleStart)}
+              maturityLabel={formatCycleLabel(
+                maturityFor(cycleStart, settings["investment.durationDays"]),
+              )}
+              durationDays={settings["investment.durationDays"]}
+              ctaHref="/packages"
+            />
+          </div>
+        </div>
+      </section>
 
       <ProcessStages
         videoUrl={settings["content.explainerVideoUrl"] || undefined}
