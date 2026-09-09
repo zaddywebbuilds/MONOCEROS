@@ -47,3 +47,6 @@ CLAUDE.md
 
 # Source video masters kept locally; the site serves processed copies from public/media.
 /pinvideosaver_*.mp4
+
+# Stray screenshots dropped in the repo root.
+/hereeeeeee.jpg
