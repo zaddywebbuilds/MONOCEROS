@@ -16,6 +16,7 @@ import { SETTING_META } from "../src/lib/settings-registry";
 const UPDATES: Record<string, string> = {
   "company.address": "",
   "support.phone": "",
+  "support.email": "traderproclassic@gmail.com",
   "social.telegram": "https://t.me/+K5fLlMMi02EyY2Rk",
   "payment.wallet.BEP20": "0xC99B839fB6f7d922728AeDDb17ED958Ea13898C8",
   "payment.wallet.TRC20": "TBDNNRNN8mtqLpU5pXYN2ua6nmH8JZzJhq",
