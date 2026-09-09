@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Hero } from "@/components/marketing/hero";
 import { MarketTicker } from "@/components/marketing/market-ticker";
 import { PackagesSection } from "@/components/marketing/packages-section";
-import { HowItWorks } from "@/components/marketing/how-it-works";
+import { ProcessStages } from "@/components/marketing/process-stages";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import {
   FaqSection,
@@ -45,10 +45,11 @@ export default async function HomePage() {
       <Hero settings={settings} />
       <MarketTicker snapshot={market} />
       <PackagesSection packages={packages} user={session?.user ?? null} />
-      <HowItWorks
+      <ProcessStages
         videoUrl={settings["content.explainerVideoUrl"] || undefined}
         user={session?.user ?? null}
         weekday={settings["cycle.weekday"] as Weekday}
+        time={settings["cycle.time"]}
         durationDays={settings["investment.durationDays"]}
       />
       <CycleSection

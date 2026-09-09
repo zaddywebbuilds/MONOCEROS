@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/marketing/prose";
-import { HowItWorks } from "@/components/marketing/how-it-works";
 import { ProcessStages } from "@/components/marketing/process-stages";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import { InfrastructureSection } from "@/components/marketing/sections";
@@ -36,18 +35,14 @@ export default async function HowItWorksPage() {
         description="Every stage of a Monoceros subscription, what happens at each one, and who does it."
       />
 
-      <HowItWorks
+      <ProcessStages
         videoUrl={settings["content.explainerVideoUrl"] || undefined}
         user={session?.user ?? null}
         weekday={settings["cycle.weekday"] as Weekday}
-        durationDays={settings["investment.durationDays"]}
-        cycleHref="#cycles"
-      />
-
-      <ProcessStages
-        weekday={settings["cycle.weekday"] as Weekday}
         time={settings["cycle.time"]}
         durationDays={settings["investment.durationDays"]}
+        variant="full"
+        cycleHref="#cycles"
       />
 
       <CycleSection
