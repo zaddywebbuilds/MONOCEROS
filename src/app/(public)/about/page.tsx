@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { PageHeader, DocumentBody } from "@/components/marketing/prose";
-import { BrandVisual, AiInfrastructureVisual } from "@/components/visuals/illustrations";
+import { BrandVisual } from "@/components/visuals/illustrations";
+import { MonitoringFootage } from "@/components/visuals/footage";
 import { SectionEyebrow } from "@/components/visuals/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { getPublicSettings } from "@/lib/settings";
@@ -94,7 +95,7 @@ export default async function AboutPage() {
                 ))}
               </dl>
             </div>
-            <AiInfrastructureVisual />
+            <MonitoringFootage />
           </div>
         </div>
       </div>

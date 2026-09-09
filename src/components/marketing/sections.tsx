@@ -16,7 +16,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/interactive";
 import { EmptyState } from "@/components/ui/feedback";
 import { SectionEyebrow, Hairline, NetworkNodes } from "@/components/visuals/decor";
-import { AiInfrastructureVisual, BrandVisual } from "@/components/visuals/illustrations";
+import { BrandVisual } from "@/components/visuals/illustrations";
+import { ExecutionFootage } from "@/components/visuals/footage";
 import { Reveal } from "@/components/visuals/reveal";
 import {
   CyclesDemo,
@@ -165,7 +166,7 @@ export function InfrastructureSection() {
             </div>
           </div>
 
-          <AiInfrastructureVisual />
+          <ExecutionFootage />
         </div>
       </div>
     </section>

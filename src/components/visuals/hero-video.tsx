@@ -5,24 +5,35 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The hero's background footage.
+ * Footage panels.
  *
- * Decorative: the headline beside it carries the meaning, so it is hidden from
- * assistive technology and taken out of the tab order. It is always muted — the
- * file has an audio track and nothing on a landing page should ever make noise —
- * and a poster frame stands in until it has loaded, so the panel is never empty.
+ * Decorative throughout: the copy beside each one carries the meaning, so the
+ * video is hidden from assistive technology and taken out of the tab order.
  *
- * Anyone who has asked for reduced motion gets the still frame instead: the
- * media query is honoured on mount and again if the preference changes.
+ * Every clip is muted — by attribute and again by property, and the audio track
+ * is stripped from the files themselves — because nothing on a marketing page
+ * should ever make noise. A poster frame stands in until the video has loaded so
+ * a panel is never empty, and anyone who has asked for reduced motion keeps that
+ * still frame instead of playback.
+ *
+ * The source files are portrait, so panels crop rather than stretch them.
  */
-export function HeroVideo({ className }: { className?: string }) {
+export function VideoPanel({
+  src,
+  poster,
+  className,
+}: {
+  src: string;
+  poster: string;
+  className?: string;
+}) {
   const ref = React.useRef<HTMLVideoElement>(null);
 
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    // React does not always reflect the muted attribute onto the property, and
+    // React does not reliably reflect the muted attribute onto the property, and
     // an unmuted video is refused autoplay anyway. Set it directly.
     el.muted = true;
 
@@ -33,7 +44,7 @@ export function HeroVideo({ className }: { className?: string }) {
         el.pause();
         el.currentTime = 0;
       } else {
-        // Autoplay can still be refused; the poster remains, which is fine.
+        // Autoplay can still be refused; the poster simply remains, which is fine.
         void el.play().catch(() => undefined);
       }
     };
@@ -47,7 +58,7 @@ export function HeroVideo({ className }: { className?: string }) {
     <video
       ref={ref}
       className={cn("size-full object-cover", className)}
-      poster="/media/hero-poster.jpg"
+      poster={poster}
       autoPlay
       muted
       loop
@@ -56,7 +67,17 @@ export function HeroVideo({ className }: { className?: string }) {
       aria-hidden
       tabIndex={-1}
     >
-      <source src="/media/hero.mp4" type="video/mp4" />
+      <source src={src} type="video/mp4" />
     </video>
+  );
+}
+
+export function HeroVideo({ className }: { className?: string }) {
+  return (
+    <VideoPanel
+      src="/media/hero.mp4"
+      poster="/media/hero-poster.jpg"
+      className={className}
+    />
   );
 }

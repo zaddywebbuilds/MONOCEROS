@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { PageHeader } from "@/components/marketing/prose";
-import { MarketsVisual } from "@/components/visuals/illustrations";
+import { PositionsFootage } from "@/components/visuals/footage";
 import { MarketLine, SectionEyebrow } from "@/components/visuals/decor";
 import { Card } from "@/components/ui/card";
 import { ErrorState, InfoNote } from "@/components/ui/feedback";
@@ -196,7 +196,7 @@ export default async function MarketsPage() {
               </p>
               <MarketLine className="mt-8 h-24 opacity-80" />
             </div>
-            <MarketsVisual />
+            <PositionsFootage />
           </div>
         </div>
       </section>
