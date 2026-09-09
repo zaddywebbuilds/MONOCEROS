@@ -1,22 +1,12 @@
 import type { Metadata } from "next";
-import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { PageHeader } from "@/components/marketing/prose";
 import { PositionsFootage } from "@/components/visuals/footage";
 import { MarketLine, SectionEyebrow } from "@/components/visuals/decor";
-import { Card } from "@/components/ui/card";
 import { ErrorState, InfoNote } from "@/components/ui/feedback";
-import { TableScroll, Table, THead, TH, TBody, TR, TD } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import {
-  formatChange,
-  formatLargeNumber,
-  formatMarketPrice,
-  getMarketSnapshot,
-  sparklinePath,
-} from "@/lib/market";
+import { MarketLive } from "@/components/marketing/market-live";
+import { getMarketSnapshot } from "@/lib/market";
 import { appUrl } from "@/lib/env";
-import { formatBusinessDateTime } from "@/lib/time";
 
 export const metadata: Metadata = {
   title: "Live Markets",
@@ -54,127 +44,8 @@ export default async function MarketsPage() {
             />
           ) : (
             <>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {snapshot.assets.map((asset) => {
-                  const positive = (asset.change24h ?? 0) >= 0;
-                  const Icon = positive ? TrendingUp : TrendingDown;
-                  const path = sparklinePath(asset.sparkline, 260, 60);
-
-                  return (
-                    <Card key={asset.id} interactive className="p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[15px] font-semibold text-fg">{asset.name}</p>
-                          <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-fg-subtle">
-                            {asset.symbol}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11.5px] font-medium tabular-nums",
-                            positive
-                              ? "border-accent-700/40 bg-accent-900/30 text-accent-300"
-                              : "border-status-rejected/30 bg-status-rejected/10 text-status-rejected",
-                          )}
-                        >
-                          <Icon className="size-3" aria-hidden />
-                          {formatChange(asset.change24h)}
-                        </span>
-                      </div>
-
-                      <p className="mt-4 text-2xl font-semibold tabular-nums tracking-tight text-fg">
-                        {formatMarketPrice(asset.price)}
-                      </p>
-
-                      {path ? (
-                        <svg
-                          viewBox="0 0 260 60"
-                          aria-hidden
-                          className="mt-4 h-14 w-full"
-                          preserveAspectRatio="none"
-                        >
-                          <path
-                            d={path}
-                            fill="none"
-                            stroke={positive ? "#2fd4a7" : "#ef5b5b"}
-                            strokeWidth="1.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      ) : null}
-
-                      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-ink-700/60 pt-4">
-                        <div>
-                          <dt className="text-[10.5px] uppercase tracking-[0.12em] text-fg-subtle">
-                            Market cap
-                          </dt>
-                          <dd className="mt-1 text-[13px] tabular-nums text-fg">
-                            {formatLargeNumber(asset.marketCap)}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-[10.5px] uppercase tracking-[0.12em] text-fg-subtle">
-                            24h volume
-                          </dt>
-                          <dd className="mt-1 text-[13px] tabular-nums text-fg">
-                            {formatLargeNumber(asset.volume24h)}
-                          </dd>
-                        </div>
-                      </dl>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              <div className="mt-10">
-                <h2 className="text-lg font-semibold tracking-tight text-fg">All tracked assets</h2>
-                <TableScroll className="mt-4">
-                  <Table>
-                    <THead>
-                      <tr>
-                        <TH>Asset</TH>
-                        <TH>Symbol</TH>
-                        <TH className="text-right">Price</TH>
-                        <TH className="text-right">24h change</TH>
-                        <TH className="text-right">Market cap</TH>
-                        <TH className="text-right">24h volume</TH>
-                      </tr>
-                    </THead>
-                    <TBody>
-                      {snapshot.assets.map((asset) => {
-                        const positive = (asset.change24h ?? 0) >= 0;
-                        return (
-                          <TR key={asset.id}>
-                            <TD className="font-medium text-fg">{asset.name}</TD>
-                            <TD>{asset.symbol}</TD>
-                            <TD className="text-right tabular-nums text-fg">
-                              {formatMarketPrice(asset.price)}
-                            </TD>
-                            <TD
-                              className={cn(
-                                "text-right tabular-nums",
-                                positive ? "text-emerald-400" : "text-status-rejected",
-                              )}
-                            >
-                              {formatChange(asset.change24h)}
-                            </TD>
-                            <TD className="text-right tabular-nums">
-                              {formatLargeNumber(asset.marketCap)}
-                            </TD>
-                            <TD className="text-right tabular-nums">
-                              {formatLargeNumber(asset.volume24h)}
-                            </TD>
-                          </TR>
-                        );
-                      })}
-                    </TBody>
-                  </Table>
-                </TableScroll>
-                <p className="mt-3 text-[12px] text-fg-subtle">
-                  Last updated {formatBusinessDateTime(snapshot.fetchedAt)}. {DISCLAIMER}
-                </p>
-              </div>
+              <MarketLive initial={snapshot} />
+              <p className="mt-3 text-[12px] text-fg-subtle">{DISCLAIMER}</p>
             </>
           )}
         </div>
