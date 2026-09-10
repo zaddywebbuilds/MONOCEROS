@@ -421,3 +421,65 @@
 
   .market-ping { animation: market-ping 2.4s ease-in-out infinite; }
 }
+
+/* ==========================================================================
+   Support sequence
+
+   A short looping scene: a ticket is opened, typed into, submitted, and an
+   email goes out. Each beat is a slice of one shared timeline, so the steps
+   stay in order however long the loop runs. Paused until scrolled into view,
+   and every keyframe ends on its finished state for reduced motion.
+   ========================================================================== */
+
+@keyframes support-caret {
+  0%, 45% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes support-type {
+  0%, 6% { transform: scaleX(0); }
+  30%, 100% { transform: scaleX(1); }
+}
+
+@keyframes support-press {
+  0%, 34% { transform: none; filter: none; }
+  38% { transform: scale(0.96); }
+  44%, 100% { transform: none; }
+}
+
+@keyframes support-send {
+  0%, 44% { opacity: 0; transform: translate(0, 0) scale(0.9); }
+  52% { opacity: 1; }
+  76% { opacity: 1; transform: translate(150px, -54px) scale(1); }
+  84%, 100% { opacity: 0; transform: translate(190px, -70px) scale(0.9); }
+}
+
+@keyframes support-land {
+  0%, 76% { opacity: 0; transform: translateY(5px); }
+  86%, 100% { opacity: 1; transform: none; }
+}
+
+@keyframes support-status {
+  0%, 40% { opacity: 0.25; }
+  48%, 100% { opacity: 1; }
+}
+
+@layer components {
+  .support-anim {
+    animation-play-state: paused;
+    animation-iteration-count: infinite;
+    animation-duration: 7s;
+    animation-timing-function: ease-in-out;
+  }
+
+  .reveal[data-revealed="true"] .support-anim {
+    animation-play-state: running;
+  }
+
+  .support-caret { animation-name: support-caret; animation-duration: 1.1s; }
+  .support-type { animation-name: support-type; transform-origin: left center; }
+  .support-press { animation-name: support-press; transform-origin: center; }
+  .support-send { animation-name: support-send; }
+  .support-land { animation-name: support-land; }
+  .support-status { animation-name: support-status; }
+}

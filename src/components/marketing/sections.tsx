@@ -16,7 +16,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/interactive";
 import { EmptyState } from "@/components/ui/feedback";
 import { SectionEyebrow, Hairline, NetworkNodes } from "@/components/visuals/decor";
-import { BrandVisual } from "@/components/visuals/illustrations";
+import { Constellation } from "@/components/visuals/constellation";
+import { SupportSequence } from "@/components/visuals/support-sequence";
 import { ExecutionFootage } from "@/components/visuals/footage";
 import { Reveal } from "@/components/visuals/reveal";
 import {
@@ -193,7 +194,7 @@ export function SupportSection({ settings }: { settings: SettingsMap }) {
             aria-hidden
             className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-accent-500/[0.08] blur-3xl"
           />
-          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+          <Reveal className="relative grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
             <div>
               <SectionEyebrow>Support</SectionEyebrow>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
@@ -203,9 +204,8 @@ export function SupportSection({ settings }: { settings: SettingsMap }) {
                 Raise a ticket from inside your dashboard for anything account-specific, or reach us
                 directly. {settings["support.hours"]}
               </p>
-            </div>
 
-            <div className="grid gap-3">
+              <div className="mt-7 grid gap-3">
               {whatsapp ? (
                 <a
                   href={whatsappHref(whatsapp)}
@@ -265,8 +265,12 @@ export function SupportSection({ settings }: { settings: SettingsMap }) {
                 </span>
                 <ArrowRight className="size-4 text-fg-subtle transition-transform group-hover:translate-x-0.5" />
               </Link>
+              </div>
             </div>
-          </div>
+
+            {/* Reveal above gates the animation: nothing moves until this is on screen. */}
+            <SupportSequence />
+          </Reveal>
         </div>
       </div>
     </section>
@@ -338,7 +342,7 @@ export function AboutPreview({ settings }: { settings: SettingsMap }) {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <Hairline className="mb-14" />
         <div className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-14">
-          <BrandVisual />
+          <Constellation />
           <div>
             <SectionEyebrow>About</SectionEyebrow>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">

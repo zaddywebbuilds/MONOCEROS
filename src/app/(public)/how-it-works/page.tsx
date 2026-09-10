@@ -5,7 +5,7 @@ import { ProcessStages } from "@/components/marketing/process-stages";
 import { ReturnCalculator } from "@/components/marketing/return-calculator";
 import { CycleSection } from "@/components/marketing/cycle-section";
 import { InfrastructureSection } from "@/components/marketing/sections";
-import { SecurityVisual } from "@/components/visuals/illustrations";
+import { SecurityPanel } from "@/components/visuals/security-panel";
 import { SectionEyebrow } from "@/components/visuals/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { getPublicSettings } from "@/lib/settings";
@@ -123,7 +123,7 @@ export default async function HowItWorksPage() {
                 Create your account
               </ButtonLink>
             </div>
-            <SecurityVisual />
+            <SecurityPanel />
           </div>
         </div>
       </section>

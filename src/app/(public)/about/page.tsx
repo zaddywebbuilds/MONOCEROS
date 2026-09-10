@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { PageHeader, DocumentBody } from "@/components/marketing/prose";
-import { BrandVisual } from "@/components/visuals/illustrations";
+import { Constellation } from "@/components/visuals/constellation";
 import { MonitoringFootage } from "@/components/visuals/footage";
 import { SectionEyebrow } from "@/components/visuals/decor";
 import { ButtonLink } from "@/components/ui/button";
@@ -80,7 +80,7 @@ export default async function AboutPage() {
           </div>
 
           <div className="space-y-6 lg:sticky lg:top-24">
-            <BrandVisual />
+            <Constellation />
             <div className="surface p-6">
               <SectionEyebrow>At a glance</SectionEyebrow>
               <dl className="mt-4 space-y-3">

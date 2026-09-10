@@ -8,7 +8,7 @@ import { StatusPill } from "@/components/ui/badge";
 import { InfoNote } from "@/components/ui/feedback";
 import { ButtonLink } from "@/components/ui/button";
 import { KycForm } from "@/components/dashboard/kyc-form";
-import { SecurityVisual } from "@/components/visuals/illustrations";
+import { SecurityPanel } from "@/components/visuals/security-panel";
 import { requireVerifiedEmail } from "@/lib/auth/rbac";
 import { getSettings } from "@/lib/settings";
 import { getLatestKycSubmission } from "@/server/services/kyc";
@@ -124,7 +124,7 @@ export default async function VerificationPage() {
         </div>
 
         <div className="space-y-5">
-          <SecurityVisual />
+          <SecurityPanel />
 
           <Card className="p-5">
             <h2 className="text-[14px] font-semibold text-fg">Why we ask for this</h2>
