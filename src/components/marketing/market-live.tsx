@@ -6,6 +6,8 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { TableScroll, Table, THead, TH, TBody, TR, TD } from "@/components/ui/table";
+// From market-format, not market: the latter pulls in the server environment
+// schema, which then ships to the browser.
 import {
   formatChange,
   formatLargeNumber,
@@ -13,7 +15,7 @@ import {
   sparklinePath,
   type MarketAsset,
   type MarketSnapshot,
-} from "@/lib/market";
+} from "@/lib/market-format";
 
 /**
  * The market page's live layer.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { jsonLdHtml } from "@/lib/json-ld";
 
 import { PageHeader } from "@/components/marketing/prose";
 import { FaqSection, SupportSection } from "@/components/marketing/sections";
@@ -32,7 +33,7 @@ export default async function FaqPage() {
       {faqs.length > 0 ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
         />
       ) : null}
 

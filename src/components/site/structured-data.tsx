@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { appUrl } from "@/lib/env";
+import { jsonLdHtml } from "@/lib/json-ld";
 import type { SettingsMap } from "@/lib/settings";
 
 /**
@@ -62,11 +63,7 @@ export function StructuredData({ settings }: { settings: SettingsMap }) {
   return (
     <script
       type="application/ld+json"
-      // Serialised rather than interpolated, and `<` escaped so a value from
-      // settings can never close the script tag.
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(graph).replace(/</g, "\\u003c"),
-      }}
+      dangerouslySetInnerHTML={{ __html: jsonLdHtml(graph) }}
     />
   );
 }
