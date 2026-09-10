@@ -19,11 +19,41 @@ import { expiresInHours, generateToken, hashToken, TOKEN_TTL } from "../src/lib/
  * The link is a credential for that account until it expires. Send it only to
  * the address it belongs to, and only over a channel you trust.
  */
-async function main() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
+/**
+ * The site these links must point at.
+ *
+ * Taken from the first argument, or from the environment. The guard below
+ * matters: `.env` here holds the development URL, so running this without
+ * thinking produces http://localhost:3000 links — which look perfectly correct,
+ * are useless to the recipient, and silently void the working links issued
+ * before them. Refuse rather than hand somebody a dead link.
+ */
+function resolveAppUrl(): string {
+  const fromArg = process.argv[2];
+  const appUrl = fromArg ?? process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
+
   if (!appUrl) {
-    throw new Error("Set NEXT_PUBLIC_APP_URL or APP_URL so the links point at the live site.");
+    throw new Error(
+      "No site URL. Pass one:\n" +
+        "  npx tsx --tsconfig tsconfig.scripts.json scripts/issue-verification-links.ts https://www.monocerosai.live",
+    );
   }
+
+  if (/localhost|127\.0\.0\.1|0\.0\.0\.0/.test(appUrl)) {
+    throw new Error(
+      `Refusing to issue links pointing at ${appUrl}.\n` +
+        "That is the development URL from .env, and nobody can open it but you.\n" +
+        "Issuing them would also invalidate any working links already sent.\n\n" +
+        "Pass the live site explicitly:\n" +
+        "  npx tsx --tsconfig tsconfig.scripts.json scripts/issue-verification-links.ts https://www.monocerosai.live",
+    );
+  }
+
+  return appUrl.replace(/\/+$/, "");
+}
+
+async function main() {
+  const appUrl = resolveAppUrl();
 
   const pending = await prisma.user.findMany({
     where: { role: "USER", emailVerifiedAt: null },
