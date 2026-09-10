@@ -92,6 +92,43 @@ function smtpProvider(): EmailProvider {
   };
 }
 
+/**
+ * Whether outbound mail can actually leave the building.
+ *
+ * The console provider is a development fallback: it writes the message to the
+ * server log and returns successfully, which is indistinguishable from a real
+ * send to everything upstream. In production that is a silent failure — every
+ * registrant is told to check an inbox nothing was sent to — so it is reported
+ * here as not configured.
+ *
+ * Returns no secrets: the provider name and a boolean, nothing more.
+ */
+export function emailDeliveryStatus(): {
+  provider: string;
+  configured: boolean;
+  reason?: string;
+} {
+  const env = serverEnv();
+  switch (env.EMAIL_PROVIDER) {
+    case "resend":
+      return env.RESEND_API_KEY
+        ? { provider: "resend", configured: true }
+        : { provider: "resend", configured: false, reason: "RESEND_API_KEY is not set" };
+    case "smtp":
+      return env.SMTP_HOST
+        ? { provider: "smtp", configured: true }
+        : { provider: "smtp", configured: false, reason: "SMTP_HOST is not set" };
+    default:
+      return process.env.NODE_ENV === "production"
+        ? {
+            provider: "console",
+            configured: false,
+            reason: "EMAIL_PROVIDER is unset, so mail is written to the log instead of sent",
+          }
+        : { provider: "console", configured: true };
+  }
+}
+
 /** Swapping providers is a one-line environment change. */
 export function getEmailProvider(): EmailProvider {
   switch (serverEnv().EMAIL_PROVIDER) {

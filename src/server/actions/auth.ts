@@ -197,7 +197,16 @@ export async function resendVerificationAction(): Promise<ActionState> {
       return successState("Your email address is already confirmed.");
     }
     enforceRateLimit("passwordReset", `verify:${user.id}`);
-    await issueVerificationEmail(user.id, user.email);
+    const sent = await issueVerificationEmail(user.id, user.email);
+
+    // Telling somebody to check an inbox nothing was sent to is how a
+    // misconfiguration goes unnoticed for days. Say what actually happened.
+    if (!sent) {
+      return errorState(
+        "We could not send the confirmation email just now. Please contact support and we will confirm your address for you.",
+      );
+    }
+
     return successState("We have sent a new confirmation link to your email address.");
   } catch (error) {
     return toErrorState(error);

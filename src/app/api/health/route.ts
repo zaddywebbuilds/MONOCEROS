@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { emailDeliveryStatus } from "@/lib/email/provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,8 +18,24 @@ export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
 
+    // Outbound mail can be broken while the database is perfectly healthy, and
+    // that failure is otherwise invisible until a registrant complains. Names
+    // the provider and whether it is configured — never a key.
+    const email = emailDeliveryStatus();
+
     return NextResponse.json(
-      { status: "ok", database: "reachable" },
+      {
+        status: "ok",
+        database: "reachable",
+        email: {
+          provider: email.provider,
+          configured: email.configured,
+          ...(email.reason ? { reason: email.reason } : {}),
+        },
+      },
+      // The HTTP status stays tied to the database alone. Unconfigured mail is
+      // worth reporting, but the deploy can still serve traffic — failing the
+      // check here would tell the platform to reject a perfectly good rollout.
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

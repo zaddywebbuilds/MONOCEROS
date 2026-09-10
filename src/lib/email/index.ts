@@ -1,7 +1,7 @@
 import "server-only";
 
 import { appUrl } from "@/lib/env";
-import { getEmailProvider } from "@/lib/email/provider";
+import { emailDeliveryStatus, getEmailProvider } from "@/lib/email/provider";
 import { renderEmailHtml, renderEmailText, type EmailContent } from "@/lib/email/render";
 import { getSettings } from "@/lib/settings";
 
@@ -12,10 +12,21 @@ import { getSettings } from "@/lib/settings";
  * approved payment or a created withdrawal. Failures are logged, not thrown.
  */
 
-async function deliver(to: string, subject: string, content: EmailContent): Promise<void> {
+async function deliver(to: string, subject: string, content: EmailContent): Promise<boolean> {
   try {
     const settings = await getSettings();
-    if (!settings["notify.emailEnabled"]) return;
+    if (!settings["notify.emailEnabled"]) return false;
+
+    // A console "send" succeeds without sending anything. Callers that tell a
+    // user to go and check their inbox need to know the difference.
+    const status = emailDeliveryStatus();
+    if (!status.configured) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[email] NOT SENT "${subject}" to ${to} — provider "${status.provider}" is not configured: ${status.reason}`,
+      );
+      return false;
+    }
 
     const companyName = settings["company.name"] || "Monoceros";
     const provider = getEmailProvider();
@@ -26,9 +37,12 @@ async function deliver(to: string, subject: string, content: EmailContent): Prom
       html: renderEmailHtml(content, companyName),
       text: renderEmailText(content, companyName),
     });
+
+    return true;
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`[email] failed to send "${subject}" to ${to}:`, error);
+    return false;
   }
 }
 

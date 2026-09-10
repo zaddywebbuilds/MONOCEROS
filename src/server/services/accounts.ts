@@ -119,7 +119,14 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
   return { userId };
 }
 
-export async function issueVerificationEmail(userId: string, email: string): Promise<void> {
+/**
+ * Issues a fresh verification token and mails it.
+ *
+ * Returns whether the message actually left. The token is always created, so a
+ * link generated here stays valid even when delivery fails — which is what lets
+ * an administrator hand it over by another route.
+ */
+export async function issueVerificationEmail(userId: string, email: string): Promise<boolean> {
   const token = generateToken();
 
   await prisma.$transaction(async (tx) => {
@@ -136,7 +143,7 @@ export async function issueVerificationEmail(userId: string, email: string): Pro
     });
   });
 
-  await sendVerificationEmail(email, `${appUrl}/verify-email?token=${token}`);
+  return sendVerificationEmail(email, `${appUrl}/verify-email?token=${token}`);
 }
 
 export async function verifyEmailToken(token: string): Promise<{ email: string }> {
