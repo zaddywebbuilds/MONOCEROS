@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
+import { appUrl } from "../src/lib/env";
 import { emailDeliveryStatus } from "../src/lib/email/provider";
 import { issueVerificationEmail } from "../src/server/services/accounts";
 
@@ -23,22 +24,25 @@ import { issueVerificationEmail } from "../src/server/services/accounts";
  * Delivery is reported per recipient from what the provider actually returned,
  * not assumed.
  */
-function resolveAppUrl(): string {
-  const appUrl = process.argv[2] ?? process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
-
-  if (!appUrl) {
-    throw new Error(
-      "No site URL. Pass one:\n" +
-        "  npx tsx --tsconfig tsconfig.scripts.json scripts/send-verification-emails.ts https://www.monocerosai.live",
-    );
-  }
-
+/**
+ * The site the links will actually point at.
+ *
+ * This must be read from `appUrl` rather than an argument. `appUrl` is a
+ * module-level const in lib/env, fixed the moment this file's imports resolve,
+ * so assigning process.env inside main() cannot change it — an earlier version
+ * did exactly that and would have passed its own guard while still mailing
+ * localhost links. Check the value that will be used.
+ */
+function assertUsableAppUrl(): string {
   if (/localhost|127\.0\.0\.1|0\.0\.0\.0/.test(appUrl)) {
     throw new Error(
       `Refusing to send links pointing at ${appUrl}.\n` +
-        "That is the development URL, and the recipient cannot open it.\n" +
-        "Pass the live site explicitly:\n" +
-        "  npx tsx --tsconfig tsconfig.scripts.json scripts/send-verification-emails.ts https://www.monocerosai.live",
+        "That is the development URL from .env here, and the recipient cannot open it.\n" +
+        "Issuing them would also invalidate any working link already sent.\n\n" +
+        "Run against the production settings instead:\n" +
+        "  vercel env pull .env.vercel-temp --environment=production\n" +
+        "  npx dotenv -e .env.vercel-temp -- npx tsx --tsconfig tsconfig.scripts.json scripts/send-verification-emails.ts\n" +
+        "  Remove-Item .env.vercel-temp",
     );
   }
 
@@ -46,12 +50,7 @@ function resolveAppUrl(): string {
 }
 
 async function main() {
-  const appUrl = resolveAppUrl();
-
-  // issueVerificationEmail builds its link from the module-level appUrl, so the
-  // environment has to agree with what was passed before anything is sent.
-  process.env.NEXT_PUBLIC_APP_URL = appUrl;
-  process.env.APP_URL = appUrl;
+  const site = assertUsableAppUrl();
 
   const status = emailDeliveryStatus();
 
@@ -68,9 +67,8 @@ async function main() {
         "Nothing was sent, and no tokens were touched.\n" +
         "Load the production settings first:\n" +
         "  vercel env pull .env.vercel-temp --environment=production\n" +
-        "  npx dotenv -e .env.vercel-temp -- npx tsx --tsconfig tsconfig.scripts.json scripts/send-verification-emails.ts " +
-        appUrl +
-        "\n  Remove-Item .env.vercel-temp",
+        "  npx dotenv -e .env.vercel-temp -- npx tsx --tsconfig tsconfig.scripts.json scripts/send-verification-emails.ts\n" +
+        "  Remove-Item .env.vercel-temp",
     );
   }
 
@@ -86,7 +84,7 @@ async function main() {
     return;
   }
 
-  console.log(`Sending via "${status.provider}" from ${appUrl}`);
+  console.log(`Sending via "${status.provider}", links pointing at ${site}`);
   console.log(`${pending.length} account(s) awaiting confirmation.\n`);
 
   let sent = 0;
