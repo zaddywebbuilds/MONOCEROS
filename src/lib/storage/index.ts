@@ -112,16 +112,13 @@ function localDriver(): StorageDriver {
 // S3-compatible driver (AWS S3, Cloudflare R2, Backblaze B2, MinIO)
 // ---------------------------------------------------------------------------
 
-function s3Driver(): StorageDriver {
+let s3ClientPromise: Promise<import("@aws-sdk/client-s3").S3Client> | null = null;
+
+function s3Client() {
+  if (s3ClientPromise) return s3ClientPromise;
+
   const env = serverEnv();
-
-  if (!env.S3_BUCKET || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY) {
-    throw new Error(
-      "STORAGE_DRIVER=s3 requires S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.",
-    );
-  }
-
-  const clientPromise = (async () => {
+  s3ClientPromise = (async () => {
     const { S3Client } = await import("@aws-sdk/client-s3");
     return new S3Client({
       region: env.S3_REGION,
@@ -133,6 +130,20 @@ function s3Driver(): StorageDriver {
       },
     });
   })();
+
+  return s3ClientPromise;
+}
+
+function s3Driver(): StorageDriver {
+  const env = serverEnv();
+
+  if (!env.S3_BUCKET || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY) {
+    throw new Error(
+      "STORAGE_DRIVER=s3 requires S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.",
+    );
+  }
+
+  const clientPromise = s3Client();
 
   return {
     name: "s3",
@@ -190,6 +201,40 @@ export type StorageStatus = {
   reason?: string;
 };
 
+/** A slow bucket must not hold the health check open until the monitor times out. */
+const PROBE_TIMEOUT_MS = 3_000;
+
+/**
+ * Translate a failed probe into something safe to serve anonymously.
+ *
+ * The distinction that matters operationally is *why* the bucket is
+ * unreachable: a rejected key needs a new token, a missing bucket needs it
+ * re-created, and a timeout is usually the provider having a bad day. None of
+ * those answers require naming the bucket, the endpoint or the key.
+ */
+function describeProbeFailure(error: unknown): string {
+  const name = (error as { name?: string })?.name ?? "";
+  const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
+    ?.httpStatusCode;
+
+  if (name === "TimeoutError" || name === "AbortError") {
+    return "storage provider did not respond";
+  }
+  if (
+    status === 401 ||
+    status === 403 ||
+    name === "InvalidAccessKeyId" ||
+    name === "SignatureDoesNotMatch" ||
+    name === "AccessDenied"
+  ) {
+    return "storage credentials were rejected";
+  }
+  if (status === 404 || name === "NotFound" || name === "NoSuchBucket") {
+    return "storage bucket not found";
+  }
+  return "storage provider unreachable";
+}
+
 /**
  * Whether an uploaded document would still be readable tomorrow.
  *
@@ -200,11 +245,16 @@ export type StorageStatus = {
  * has evaporated. By then the investor has sent their passport and believes it
  * is held.
  *
+ * For the s3 driver this actually reaches the bucket rather than trusting that
+ * a populated set of environment variables means a working one. A revoked or
+ * expired token looks identical to a healthy config from the outside, and the
+ * whole point of the check is to notice before an investor does.
+ *
  * Names the driver and the verdict, never a bucket, endpoint or key — the same
  * discipline as emailDeliveryStatus(), and for the same reason: this is served
  * to anonymous callers.
  */
-export function storageStatus(): StorageStatus {
+export async function storageStatus(): Promise<StorageStatus> {
   let env: ReturnType<typeof serverEnv>;
   try {
     env = serverEnv();
@@ -222,7 +272,19 @@ export function storageStatus(): StorageStatus {
     if (missing.length > 0) {
       return { driver: "s3", durable: false, reason: `missing ${missing.join(", ")}` };
     }
-    return { driver: "s3", durable: true };
+
+    try {
+      const { HeadBucketCommand } = await import("@aws-sdk/client-s3");
+      const client = await s3Client();
+      await client.send(new HeadBucketCommand({ Bucket: env.S3_BUCKET }), {
+        abortSignal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+      });
+      return { driver: "s3", durable: true };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("[health] storage probe failed:", error);
+      return { driver: "s3", durable: false, reason: describeProbeFailure(error) };
+    }
   }
 
   // Vercel sets VERCEL=1 in every runtime. Its filesystem does not survive

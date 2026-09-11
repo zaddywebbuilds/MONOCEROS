@@ -27,7 +27,7 @@ export async function GET() {
     // Uploaded documents failing to persist is the same shape of problem: it
     // reports success at the time and is only discovered when an administrator
     // opens a KYC submission and the file is gone.
-    const store = storageStatus();
+    const store = await storageStatus();
 
     return NextResponse.json(
       {
