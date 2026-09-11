@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { emailDeliveryStatus } from "@/lib/email/provider";
+import { storageStatus } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,11 @@ export async function GET() {
     // the provider and whether it is configured — never a key.
     const email = emailDeliveryStatus();
 
+    // Uploaded documents failing to persist is the same shape of problem: it
+    // reports success at the time and is only discovered when an administrator
+    // opens a KYC submission and the file is gone.
+    const store = storageStatus();
+
     return NextResponse.json(
       {
         status: "ok",
@@ -32,10 +38,17 @@ export async function GET() {
           configured: email.configured,
           ...(email.reason ? { reason: email.reason } : {}),
         },
+        storage: {
+          driver: store.driver,
+          durable: store.durable,
+          ...(store.reason ? { reason: store.reason } : {}),
+        },
       },
-      // The HTTP status stays tied to the database alone. Unconfigured mail is
-      // worth reporting, but the deploy can still serve traffic — failing the
-      // check here would tell the platform to reject a perfectly good rollout.
+      // The HTTP status stays tied to the database alone. Unconfigured mail or
+      // non-durable storage are both worth reporting, but the deploy can still
+      // serve traffic — failing the check here would tell the platform to
+      // reject a perfectly good rollout, and the monitor that watches this URL
+      // would page for a condition no redeploy can fix.
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

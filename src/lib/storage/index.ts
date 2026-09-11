@@ -183,3 +183,57 @@ export function storage(): StorageDriver {
   driver = serverEnv().STORAGE_DRIVER === "s3" ? s3Driver() : localDriver();
   return driver;
 }
+
+export type StorageStatus = {
+  driver: "local" | "s3" | "unknown";
+  durable: boolean;
+  reason?: string;
+};
+
+/**
+ * Whether an uploaded document would still be readable tomorrow.
+ *
+ * Worth reporting because the failure is silent and delayed. The local driver
+ * writes happily to a serverless host's temporary filesystem and returns
+ * success; the KycSubmission row is created with a documentKey; and nothing at
+ * all appears wrong until somebody opens the submission days later and the file
+ * has evaporated. By then the investor has sent their passport and believes it
+ * is held.
+ *
+ * Names the driver and the verdict, never a bucket, endpoint or key — the same
+ * discipline as emailDeliveryStatus(), and for the same reason: this is served
+ * to anonymous callers.
+ */
+export function storageStatus(): StorageStatus {
+  let env: ReturnType<typeof serverEnv>;
+  try {
+    env = serverEnv();
+  } catch {
+    return { driver: "unknown", durable: false, reason: "environment is not readable" };
+  }
+
+  if (env.STORAGE_DRIVER === "s3") {
+    const missing = [
+      !env.S3_BUCKET && "S3_BUCKET",
+      !env.S3_ACCESS_KEY_ID && "S3_ACCESS_KEY_ID",
+      !env.S3_SECRET_ACCESS_KEY && "S3_SECRET_ACCESS_KEY",
+    ].filter(Boolean);
+
+    if (missing.length > 0) {
+      return { driver: "s3", durable: false, reason: `missing ${missing.join(", ")}` };
+    }
+    return { driver: "s3", durable: true };
+  }
+
+  // Vercel sets VERCEL=1 in every runtime. Its filesystem does not survive
+  // between invocations, so a local driver there loses every upload.
+  if (process.env.VERCEL === "1") {
+    return {
+      driver: "local",
+      durable: false,
+      reason: "local filesystem is discarded between requests on this host",
+    };
+  }
+
+  return { driver: "local", durable: true };
+}
