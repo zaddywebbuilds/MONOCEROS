@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 
 import { DashboardPage, PageTitle } from "@/components/dashboard/page-parts";
 import { StatusPill } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/feedback";
+import { EmptyState, InfoNote } from "@/components/ui/feedback";
 import { FilterSelect, Pagination, SearchInput } from "@/components/ui/interactive";
 import {
   MobileCard,
@@ -30,7 +30,7 @@ const PER_PAGE = 20;
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; page?: string; deleted?: string }>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
@@ -41,6 +41,7 @@ export default async function AdminUsersPage({
     role: "USER",
     ...(filter === "verified" ? { kycStatus: "APPROVED" } : {}),
     ...(filter === "unverified" ? { kycStatus: { not: "APPROVED" } } : {}),
+    ...(filter === "active" ? { status: "ACTIVE" } : {}),
     ...(filter === "suspended" ? { status: "SUSPENDED" } : {}),
     ...(params.q
       ? {
@@ -99,12 +100,17 @@ export default async function AdminUsersPage({
     <DashboardPage className="max-w-7xl">
       <PageTitle title="Users" description={`${total} investor account${total === 1 ? "" : "s"}.`} />
 
+      {params.deleted ? (
+        <InfoNote className="mb-4">Account deleted. The deletion is recorded in the audit log.</InfoNote>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap gap-2">
         <SearchInput placeholder="Search name, email, phone or reference" className="w-full sm:w-96" />
         <FilterSelect
           paramName="filter"
           label="Filter"
           options={[
+            { value: "active", label: "Active" },
             { value: "verified", label: "Verified" },
             { value: "unverified", label: "Unverified" },
             { value: "suspended", label: "Suspended" },

@@ -20,6 +20,7 @@ import {
 } from "@/lib/settings";
 import {
   contentBlockSchema,
+  deleteUserSchema,
   faqSchema,
   investmentCorrectionSchema,
   kycReviewSchema,
@@ -34,6 +35,7 @@ import { approvePayment, markPaymentUnderReview, rejectPayment } from "@/server/
 import { decideWithdrawal } from "@/server/services/withdrawals";
 import { activateDueInvestments } from "@/server/services/investments";
 import { ensureCycle } from "@/server/services/cycles";
+import { deleteInvestorAccount } from "@/server/services/accounts";
 import {
   errorState,
   isFrameworkError,
@@ -302,6 +304,25 @@ export async function setUserStatusAction(
     if (isFrameworkError(error)) throw error;
     return toErrorState(error);
   }
+}
+
+export async function deleteUserAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = parseForm(deleteUserSchema, formData);
+  if (!parsed.ok) return parsed.state;
+
+  try {
+    const admin = await assertAdmin();
+    await deleteInvestorAccount({ admin, ...parsed.data });
+  } catch (error) {
+    if (isFrameworkError(error)) throw error;
+    return toErrorState(error);
+  }
+
+  revalidatePath("/admin/users");
+  redirect("/admin/users?deleted=1");
 }
 
 // ---------------------------------------------------------------------------

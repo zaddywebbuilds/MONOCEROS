@@ -243,6 +243,12 @@ export const investmentCorrectionSchema = z.object({
   reason: safeText(300, "Reason"),
 });
 
+export const deleteUserSchema = z.object({
+  userId: z.string().min(1),
+  confirmEmail: z.string().trim().toLowerCase().min(1, "Type the account's email address to confirm"),
+  reason: safeText(300, "Reason"),
+});
+
 export const manualCycleSchema = z.object({
   cycleId: z.string().min(1),
   reason: safeText(300, "Reason"),

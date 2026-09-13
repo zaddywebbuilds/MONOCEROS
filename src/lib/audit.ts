@@ -46,6 +46,7 @@ export const AUDIT_ACTION = {
   FAQ_UPDATED: "faq.updated",
   USER_SUSPENDED: "user.suspended",
   USER_UNSUSPENDED: "user.unsuspended",
+  USER_DELETED: "user.deleted",
   TICKET_STATUS_CHANGED: "support.status_changed",
 } as const;
 

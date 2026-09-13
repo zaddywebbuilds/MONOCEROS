@@ -22,6 +22,8 @@ import {
   hashRecoveryCode,
 } from "@/lib/auth/totp";
 import { requestContext } from "@/lib/request";
+import { storage } from "@/lib/storage";
+import type { SessionUser } from "@/lib/auth/session";
 import { formatBusinessDateTime } from "@/lib/time";
 import { notify, notifications } from "@/lib/notifications";
 import { writeAudit, AUDIT_ACTION } from "@/lib/audit";
@@ -585,6 +587,118 @@ export async function completeTotpChallenge(
   }
 
   return { userId: user.id, role: user.role };
+}
+
+// ---------------------------------------------------------------------------
+// Account deletion
+// ---------------------------------------------------------------------------
+
+/**
+ * Why an investor account cannot be deleted, or an empty list if it can.
+ *
+ * Deletion cascades through every row belonging to the user. For an account
+ * that never put money in, that is the point: it clears abandoned sign-ups.
+ * For one that did, it would erase the only record of money received and owed,
+ * so those accounts are suspended instead, which blocks access and keeps history.
+ */
+export async function accountDeletionBlockers(userId: string): Promise<string[]> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      _count: {
+        select: {
+          investments: true,
+          payments: true,
+          withdrawals: true,
+          rollovers: true,
+          transactions: true,
+        },
+      },
+    },
+  });
+  if (!user) return ["Account not found."];
+
+  const blockers: string[] = [];
+  if (user.role !== "USER") blockers.push("Administrator accounts cannot be deleted from here.");
+
+  const c = user._count;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  if (c.investments) blockers.push(`Has ${plural(c.investments, "investment")}.`);
+  if (c.payments) blockers.push(`Has ${plural(c.payments, "payment")}.`);
+  if (c.withdrawals) blockers.push(`Has ${plural(c.withdrawals, "withdrawal")}.`);
+  if (c.rollovers) blockers.push(`Has ${plural(c.rollovers, "rollover")}.`);
+  if (c.transactions) blockers.push(`Has ${plural(c.transactions, "ledger transaction")}.`);
+  return blockers;
+}
+
+export async function deleteInvestorAccount(input: {
+  admin: Pick<SessionUser, "id" | "email" | "role">;
+  userId: string;
+  confirmEmail: string;
+  reason: string;
+}): Promise<{ email: string }> {
+  if (input.userId === input.admin.id) {
+    throw new BusinessRuleError("You cannot delete your own account.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: input.userId },
+    select: {
+      id: true,
+      email: true,
+      reference: true,
+      status: true,
+      kycStatus: true,
+      createdAt: true,
+      kycSubmissions: { select: { documentKey: true } },
+    },
+  });
+  if (!user) throw new BusinessRuleError("That account no longer exists.");
+
+  if (input.confirmEmail !== user.email.toLowerCase()) {
+    throw new BusinessRuleError("The email you typed does not match this account.");
+  }
+
+  const blockers = await accountDeletionBlockers(user.id);
+  if (blockers.length > 0) {
+    throw new BusinessRuleError(
+      `This account cannot be deleted. ${blockers.join(" ")} Suspend it instead.`,
+    );
+  }
+
+  // Written before the delete so the record survives the cascade; AuditLog
+  // keeps actorEmail and entityId even once the user row is gone.
+  await writeAudit({
+    actor: input.admin,
+    action: AUDIT_ACTION.USER_DELETED,
+    entityType: "User",
+    entityId: user.id,
+    oldValue: {
+      email: user.email,
+      reference: user.reference,
+      status: user.status,
+      kycStatus: user.kycStatus,
+      registeredAt: user.createdAt.toISOString(),
+      identityDocuments: user.kycSubmissions.length,
+    },
+    reason: input.reason,
+  });
+
+  await prisma.user.delete({ where: { id: user.id } });
+
+  // A deleted account's identity documents must not linger in the bucket.
+  // Logged rather than thrown: the account is already gone.
+  for (const { documentKey } of user.kycSubmissions) {
+    try {
+      await storage().remove(documentKey);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`[accounts] could not remove document ${documentKey}:`, error);
+    }
+  }
+
+  return { email: user.email };
 }
 
 export { AuthError, TWO_FACTOR_COOKIE };

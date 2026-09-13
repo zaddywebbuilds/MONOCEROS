@@ -14,6 +14,7 @@ import {
   annotateInvestmentAction,
   broadcastNotificationAction,
   decideWithdrawalAction,
+  deleteUserAction,
   reviewKycAction,
   reviewPaymentAction,
   runCycleActivationAction,
@@ -429,6 +430,64 @@ export function UserStatusForm({
         Suspending signs the account out everywhere and blocks sign-in. Investment records are not
         altered.
       </p>
+    </form>
+  );
+}
+
+export function DeleteUserForm({
+  userId,
+  email,
+  blockers,
+}: {
+  userId: string;
+  email: string;
+  blockers: string[];
+}) {
+  const [state, formAction] = useActionState(deleteUserAction, idleState);
+
+  if (blockers.length > 0) {
+    return (
+      <div className="space-y-2">
+        <p className="text-[12.5px] leading-relaxed text-fg-muted">
+          This account holds financial records, so it cannot be deleted. Suspend it instead to
+          block access while keeping the history.
+        </p>
+        <ul className="list-disc space-y-0.5 pl-4 text-[11.5px] text-fg-subtle">
+          {blockers.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} className="space-y-3" noValidate>
+      <input type="hidden" name="userId" value={userId} />
+
+      <FormError>{state.status === "error" ? state.message : null}</FormError>
+
+      <p className="text-[12.5px] leading-relaxed text-fg-muted">
+        Permanently removes the account, its profile, identity documents, notifications and support
+        tickets. This cannot be undone. The deletion is kept in the audit log.
+      </p>
+
+      <Field label="Reason" htmlFor="delete-reason" required error={state.fieldErrors?.reason}>
+        <Textarea id="delete-reason" name="reason" rows={2} required />
+      </Field>
+
+      <Field
+        label={`Type ${email} to confirm`}
+        htmlFor="delete-confirm"
+        required
+        error={state.fieldErrors?.confirmEmail}
+      >
+        <Input id="delete-confirm" name="confirmEmail" autoComplete="off" required />
+      </Field>
+
+      <SubmitButton size="sm" variant="danger" pendingLabel="Deleting…">
+        Delete account permanently
+      </SubmitButton>
     </form>
   );
 }
