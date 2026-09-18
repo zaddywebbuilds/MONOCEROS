@@ -247,6 +247,10 @@ export const deleteUserSchema = z.object({
   userId: z.string().min(1),
   confirmEmail: z.string().trim().toLowerCase().min(1, "Type the account's email address to confirm"),
   reason: safeText(300, "Reason"),
+  acknowledgeRecords: z
+    .union([z.boolean(), z.literal("on")])
+    .optional()
+    .transform((v) => v === true || v === "on"),
 });
 
 export const manualCycleSchema = z.object({

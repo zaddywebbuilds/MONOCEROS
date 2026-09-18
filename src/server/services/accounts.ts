@@ -601,7 +601,23 @@ export async function completeTotpChallenge(
  * For one that did, it would erase the only record of money received and owed,
  * so those accounts are suspended instead, which blocks access and keeps history.
  */
-export async function accountDeletionBlockers(userId: string): Promise<string[]> {
+/**
+ * Two separate questions, deliberately not merged.
+ *
+ * `blockers` are refusals — there is no path past them from the admin panel.
+ * `records` are things the delete would destroy; they are shown so the decision
+ * is informed, not to prevent it. Test and demo accounts accumulate exactly
+ * these records, so treating them as refusals made the accounts they were meant
+ * to protect impossible to clear out.
+ */
+export interface AccountDeletionAssessment {
+  blockers: string[];
+  records: string[];
+}
+
+export async function assessAccountDeletion(
+  userId: string,
+): Promise<AccountDeletionAssessment> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -617,19 +633,23 @@ export async function accountDeletionBlockers(userId: string): Promise<string[]>
       },
     },
   });
-  if (!user) return ["Account not found."];
+  if (!user) return { blockers: ["Account not found."], records: [] };
 
   const blockers: string[] = [];
+  // Deleting a colleague's login from a user screen is never what is meant;
+  // administrators are removed deliberately with scripts/remove-admin.ts.
   if (user.role !== "USER") blockers.push("Administrator accounts cannot be deleted from here.");
 
   const c = user._count;
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-  if (c.investments) blockers.push(`Has ${plural(c.investments, "investment")}.`);
-  if (c.payments) blockers.push(`Has ${plural(c.payments, "payment")}.`);
-  if (c.withdrawals) blockers.push(`Has ${plural(c.withdrawals, "withdrawal")}.`);
-  if (c.rollovers) blockers.push(`Has ${plural(c.rollovers, "rollover")}.`);
-  if (c.transactions) blockers.push(`Has ${plural(c.transactions, "ledger transaction")}.`);
-  return blockers;
+  const records: string[] = [];
+  if (c.investments) records.push(plural(c.investments, "investment"));
+  if (c.payments) records.push(plural(c.payments, "payment"));
+  if (c.withdrawals) records.push(plural(c.withdrawals, "withdrawal"));
+  if (c.rollovers) records.push(plural(c.rollovers, "rollover"));
+  if (c.transactions) records.push(plural(c.transactions, "ledger transaction"));
+
+  return { blockers, records };
 }
 
 export async function deleteInvestorAccount(input: {
@@ -637,6 +657,7 @@ export async function deleteInvestorAccount(input: {
   userId: string;
   confirmEmail: string;
   reason: string;
+  acknowledgeRecords?: boolean;
 }): Promise<{ email: string }> {
   if (input.userId === input.admin.id) {
     throw new BusinessRuleError("You cannot delete your own account.");
@@ -660,10 +681,13 @@ export async function deleteInvestorAccount(input: {
     throw new BusinessRuleError("The email you typed does not match this account.");
   }
 
-  const blockers = await accountDeletionBlockers(user.id);
+  const { blockers, records } = await assessAccountDeletion(user.id);
   if (blockers.length > 0) {
+    throw new BusinessRuleError(`This account cannot be deleted. ${blockers.join(" ")}`);
+  }
+  if (records.length > 0 && !input.acknowledgeRecords) {
     throw new BusinessRuleError(
-      `This account cannot be deleted. ${blockers.join(" ")} Suspend it instead.`,
+      `This account holds ${records.join(", ")}. Tick the confirmation to delete it and those records together.`,
     );
   }
 
@@ -681,6 +705,9 @@ export async function deleteInvestorAccount(input: {
       kycStatus: user.kycStatus,
       registeredAt: user.createdAt.toISOString(),
       identityDocuments: user.kycSubmissions.length,
+      // The cascade takes these rows with it, so the only surviving account of
+      // what was destroyed is this line.
+      destroyedRecords: records.length > 0 ? records : ["none"],
     },
     reason: input.reason,
   });

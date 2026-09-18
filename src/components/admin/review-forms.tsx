@@ -438,10 +438,12 @@ export function DeleteUserForm({
   userId,
   email,
   blockers,
+  records,
 }: {
   userId: string;
   email: string;
   blockers: string[];
+  records: string[];
 }) {
   const [state, formAction] = useActionState(deleteUserAction, idleState);
 
@@ -449,8 +451,7 @@ export function DeleteUserForm({
     return (
       <div className="space-y-2">
         <p className="text-[12.5px] leading-relaxed text-fg-muted">
-          This account holds financial records, so it cannot be deleted. Suspend it instead to
-          block access while keeping the history.
+          This account cannot be deleted from here.
         </p>
         <ul className="list-disc space-y-0.5 pl-4 text-[11.5px] text-fg-subtle">
           {blockers.map((b) => (
@@ -471,6 +472,31 @@ export function DeleteUserForm({
         Permanently removes the account, its profile, identity documents, notifications and support
         tickets. This cannot be undone. The deletion is kept in the audit log.
       </p>
+
+      {records.length > 0 ? (
+        <div className="rounded-lg border border-status-rejected/40 bg-status-rejected/5 p-3">
+          <p className="text-[12px] font-semibold text-fg">
+            This account also holds financial records
+          </p>
+          <ul className="mt-1.5 list-disc space-y-0.5 pl-4 text-[11.5px] text-fg-muted">
+            {records.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+          <label className="mt-3 flex items-start gap-2.5 text-[11.5px] leading-relaxed text-fg">
+            <input
+              type="checkbox"
+              name="acknowledgeRecords"
+              required
+              className="mt-0.5 size-3.5 shrink-0 accent-status-rejected"
+            />
+            <span>
+              I understand these records will be destroyed along with the account. If this account
+              represents real investor money, suspend it instead.
+            </span>
+          </label>
+        </div>
+      ) : null}
 
       <Field label="Reason" htmlFor="delete-reason" required error={state.fieldErrors?.reason}>
         <Textarea id="delete-reason" name="reason" rows={2} required />

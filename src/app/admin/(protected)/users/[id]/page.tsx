@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/feedback";
 import { DeleteUserForm, UserStatusForm } from "@/components/admin/review-forms";
-import { accountDeletionBlockers } from "@/server/services/accounts";
+import { assessAccountDeletion } from "@/server/services/accounts";
 import { prisma } from "@/lib/prisma";
 import { formatUSD } from "@/lib/money";
 import { formatBusinessDate, formatBusinessDateTime, formatShortDate } from "@/lib/time";
@@ -69,7 +69,7 @@ export default async function AdminUserDetailPage({
     _sum: { principalAmount: true },
   });
 
-  const deletionBlockers = await accountDeletionBlockers(user.id);
+  const deletion = await assessAccountDeletion(user.id);
 
   const profile = user.profile;
   const suspended = user.status === "SUSPENDED";
@@ -238,7 +238,12 @@ export default async function AdminUserDetailPage({
 
           <Section title="Delete account" className="mt-0">
             <Card className="p-5">
-              <DeleteUserForm userId={user.id} email={user.email} blockers={deletionBlockers} />
+              <DeleteUserForm
+                userId={user.id}
+                email={user.email}
+                blockers={deletion.blockers}
+                records={deletion.records}
+              />
             </Card>
           </Section>
 
