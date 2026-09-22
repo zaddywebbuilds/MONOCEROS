@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/feedback";
 import { DeleteUserForm, UserStatusForm } from "@/components/admin/review-forms";
+import { ReferralCodeForm, SetReferrerForm } from "@/components/admin/referral-forms";
 import { assessAccountDeletion } from "@/server/services/accounts";
 import { prisma } from "@/lib/prisma";
 import { formatUSD } from "@/lib/money";
@@ -50,6 +51,7 @@ export default async function AdminUserDetailPage({
       kycSubmissions: { orderBy: { submittedAt: "desc" }, take: 5 },
       loginEvents: { orderBy: { createdAt: "desc" }, take: 10 },
       walletChanges: { orderBy: { createdAt: "desc" }, take: 5 },
+      referredBy: { select: { referralCode: true, email: true } },
     },
   });
 
@@ -233,6 +235,15 @@ export default async function AdminUserDetailPage({
           <Section title="Account status" className="mt-0">
             <Card className="p-5">
               <UserStatusForm userId={user.id} suspended={suspended} />
+            </Card>
+          </Section>
+
+          <Section title="Referral programme" className="mt-0">
+            <Card className="space-y-5 p-5">
+              <ReferralCodeForm userId={user.id} code={user.referralCode} />
+              <div className="border-t border-ink-700/60 pt-5">
+                <SetReferrerForm userId={user.id} currentCode={user.referredBy?.referralCode ?? null} />
+              </div>
             </Card>
           </Section>
 

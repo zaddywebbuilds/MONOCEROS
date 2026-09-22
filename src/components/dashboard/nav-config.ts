@@ -8,6 +8,7 @@ import {
   LifeBuoy,
   Receipt,
   Repeat,
+  Share2,
   ShieldCheck,
   TrendingUp,
   Wallet,
@@ -39,6 +40,7 @@ export const DASHBOARD_NAV: { section: string; items: NavItem[] }[] = [
       { href: "/dashboard/withdrawals", label: "Withdrawals", icon: ArrowDownToLine },
       { href: "/dashboard/rollovers", label: "Rollovers", icon: Repeat },
       { href: "/dashboard/transactions", label: "Transactions", icon: Receipt },
+      { href: "/dashboard/referrals", label: "Referrals", icon: Share2 },
     ],
   },
   {

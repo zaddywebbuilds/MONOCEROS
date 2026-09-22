@@ -185,6 +185,7 @@ export async function savePackageAction(
       badge: parsed.data.badge || null,
       displayOrder: parsed.data.displayOrder,
       isActive: Boolean(parsed.data.isActive),
+      comingSoon: Boolean(parsed.data.comingSoon),
     };
 
     if (parsed.data.id) {

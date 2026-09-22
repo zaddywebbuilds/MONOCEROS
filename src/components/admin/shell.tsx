@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  Share2,
   X,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export interface AdminCounts {
   payments: number;
   withdrawals: number;
   tickets: number;
+  referralPayouts: number;
 }
 
 const NAV: { section: string; items: { href: string; label: string; icon: typeof Users; badge?: keyof AdminCounts }[] }[] =
@@ -55,6 +57,12 @@ const NAV: { section: string; items: { href: string; label: string; icon: typeof
           badge: "withdrawals",
         },
         { href: "/admin/rollovers", label: "Rollovers", icon: Repeat },
+        {
+          href: "/admin/referrals",
+          label: "Referrals",
+          icon: Share2,
+          badge: "referralPayouts",
+        },
         { href: "/admin/transactions", label: "Transactions", icon: Receipt },
       ],
     },

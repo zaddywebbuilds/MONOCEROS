@@ -19,6 +19,8 @@ import type { SessionUser } from "@/lib/auth/session";
  * Verified investor     -> the subscription confirmation page
  */
 export function packageCtaHref(pkg: PublicPackage, user: SessionUser | null): string {
+  // Nothing to route to: the tier is advertised, not open.
+  if (pkg.comingSoon) return "";
   if (!user) return `/register?package=${pkg.slug}`;
   if (!user.emailVerified) return "/verify-email";
   if (user.kycStatus !== "APPROVED") return "/dashboard/verification";
@@ -82,7 +84,9 @@ export function PackageCard({
           </span>
           <h3 className="text-[15px] font-semibold tracking-tight text-fg">{pkg.name}</h3>
         </div>
-        {pkg.badge ? (
+        {pkg.comingSoon ? (
+          <Badge variant="outline">Coming soon</Badge>
+        ) : pkg.badge ? (
           <Badge variant={featured ? "accent" : "outline"}>{pkg.badge}</Badge>
         ) : null}
       </div>
@@ -146,15 +150,24 @@ export function PackageCard({
 
       <div className="mt-6 flex-1" />
 
-      <ButtonLink
-        href={href}
-        variant={featured ? "primary" : "secondary"}
-        block
-        className="group/cta mt-2"
-      >
-        Get Started
-        <ArrowRight className="transition-transform duration-200 group-hover/cta:translate-x-0.5" />
-      </ButtonLink>
+      {pkg.comingSoon ? (
+        <p
+          className="mt-2 rounded-lg border border-ink-700 bg-ink-880/50 px-3.5 py-2.5 text-center text-[12.5px] font-medium text-fg-subtle"
+          aria-label={`${pkg.name} is not open for subscriptions yet`}
+        >
+          Opening soon
+        </p>
+      ) : (
+        <ButtonLink
+          href={href}
+          variant={featured ? "primary" : "secondary"}
+          block
+          className="group/cta mt-2"
+        >
+          Get Started
+          <ArrowRight className="transition-transform duration-200 group-hover/cta:translate-x-0.5" />
+        </ButtonLink>
+      )}
     </article>
   );
 }

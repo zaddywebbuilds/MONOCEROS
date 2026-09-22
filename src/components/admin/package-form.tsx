@@ -20,6 +20,7 @@ export interface PackageFormValues {
   badge: string;
   displayOrder: number;
   isActive: boolean;
+  comingSoon: boolean;
 }
 
 const EMPTY: PackageFormValues = {
@@ -32,6 +33,7 @@ const EMPTY: PackageFormValues = {
   badge: "",
   displayOrder: 0,
   isActive: true,
+  comingSoon: false,
 };
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
@@ -175,6 +177,15 @@ export function PackageForm({ values = EMPTY }: { values?: PackageFormValues }) 
           name="isActive"
           defaultChecked={values.isActive}
           label="Active — visible on the public site and available for new subscriptions"
+        />
+      </div>
+
+      <div className="rounded-lg border border-ink-700 bg-ink-880/50 p-3.5">
+        <Checkbox
+          id="comingSoon"
+          name="comingSoon"
+          defaultChecked={values.comingSoon}
+          label="Coming soon — listed and priced, but nobody can subscribe yet"
         />
       </div>
 

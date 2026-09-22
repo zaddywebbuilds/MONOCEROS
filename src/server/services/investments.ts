@@ -96,6 +96,12 @@ export async function createSubscription(
   if (!pkg || !pkg.isActive) {
     throw new BusinessRuleError("That investment package is not available.");
   }
+  // A coming-soon tier is advertising. It is listed and priced, but refusing
+  // here is what stops somebody reaching the payment screen through a stale
+  // link or a hand-typed URL.
+  if (pkg.comingSoon) {
+    throw new BusinessRuleError(`${pkg.name} is not open for subscriptions yet.`);
+  }
 
   const maxActive = settings["investment.maxActivePerUser"];
   if (maxActive > 0) {

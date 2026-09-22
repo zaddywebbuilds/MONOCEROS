@@ -211,6 +211,10 @@ export const packageSchema = z.object({
     .union([z.boolean(), z.literal("on")])
     .optional()
     .transform((v) => v === true || v === "on"),
+  comingSoon: z
+    .union([z.boolean(), z.literal("on")])
+    .optional()
+    .transform((v) => v === true || v === "on"),
 });
 
 export const faqSchema = z.object({
@@ -241,6 +245,37 @@ export const investmentCorrectionSchema = z.object({
   investmentId: z.string().min(1),
   note: safeText(500, "Correction note"),
   reason: safeText(300, "Reason"),
+});
+
+export const referralPayoutRequestSchema = z.object({
+  walletAddress: walletAddressSchema,
+  walletNetwork: z.string().trim().min(2).max(20),
+});
+
+export const referralPayoutDecisionSchema = z.object({
+  payoutId: z.string().min(1),
+  decision: z.enum(["APPROVED", "PAID", "REJECTED"]),
+  reason: safeText(300, "Reason").optional(),
+  paymentTxid: z.string().trim().max(128).optional(),
+});
+
+export const referralCodeSchema = z.object({
+  userId: z.string().min(1),
+  action: z.enum(["ISSUE", "REVOKE"]),
+  reason: safeText(300, "Reason").optional(),
+});
+
+export const setReferrerSchema = z.object({
+  userId: z.string().min(1),
+  referrerCode: z.string().trim().max(64).optional(),
+  reason: safeText(300, "Reason"),
+});
+
+export const manualReferralBonusSchema = z.object({
+  referrerId: z.string().min(1),
+  investorId: z.string().min(1),
+  amount: moneyInputSchema,
+  note: safeText(300, "Note"),
 });
 
 export const deleteUserSchema = z.object({

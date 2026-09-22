@@ -23,6 +23,7 @@ export interface PublicPackage {
   durationDays: number;
   description: string;
   badge: string | null;
+  comingSoon: boolean;
 }
 
 export const getPublicPackages = cache(async (): Promise<PublicPackage[]> => {
@@ -42,6 +43,7 @@ export const getPublicPackages = cache(async (): Promise<PublicPackage[]> => {
       durationDays: pkg.durationDays,
       description: pkg.description,
       badge: pkg.badge,
+      comingSoon: pkg.comingSoon,
     }));
   } catch (error) {
     // eslint-disable-next-line no-console

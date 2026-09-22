@@ -61,6 +61,7 @@ export default async function EditPackagePage({ params }: { params: Promise<{ id
               badge: pkg.badge ?? "",
               displayOrder: pkg.displayOrder,
               isActive: pkg.isActive,
+              comingSoon: pkg.comingSoon,
             }}
           />
         </Card>
