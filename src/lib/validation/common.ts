@@ -3,6 +3,30 @@ import { z } from "zod";
 /** Shared primitives used by every schema on the platform. */
 
 /**
+ * Names that must never become a referral link, because /r/<code> and the
+ * rest of the site share a namespace in the user's head even where they do
+ * not share one in the router. "admin-7F3K9Q" handed out in a WhatsApp
+ * message is a phishing link with our domain on it.
+ */
+const RESERVED_USERNAMES = new Set([
+  "admin", "administrator", "monoceros", "support", "help", "security",
+  "login", "signin", "signup", "register", "dashboard", "account", "accounts",
+  "api", "www", "mail", "billing", "payment", "payments", "withdraw",
+  "withdrawal", "verify", "verification", "kyc", "wallet", "official", "staff",
+  "team", "root", "system", "moderator", "mod", "null", "undefined",
+]);
+
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "Username must be at least 3 characters")
+  .max(20, "Username must be 20 characters or fewer")
+  .regex(/^[a-z0-9_]+$/, "Use letters, numbers and underscore only")
+  .regex(/^[a-z]/, "Username must start with a letter")
+  .refine((v) => !RESERVED_USERNAMES.has(v), { message: "That username is not available" });
+
+/**
  * Strips ASCII control characters from free text before it is persisted.
  * Implemented by code point rather than a regular expression so the source
  * file itself stays free of control characters.

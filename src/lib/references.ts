@@ -19,6 +19,8 @@ export const REFERENCE_PREFIX = {
   ticket: "TKT",
   cycle: "CYC",
   rollover: "RLV",
+  referralEarning: "REF",
+  referralPayout: "RPO",
 } as const;
 
 export type ReferenceKind = keyof typeof REFERENCE_PREFIX;

@@ -51,4 +51,6 @@ export const TRANSACTION_TYPE_LABEL: Record<TransactionType, string> = {
   WITHDRAWAL_PAID: "Withdrawal paid",
   WITHDRAWAL_REJECTED: "Withdrawal rejected",
   ROLLOVER_CREATED: "Rollover created",
+  REFERRAL_BONUS_EARNED: "Referral commission earned",
+  REFERRAL_PAYOUT_PAID: "Referral commission paid out",
 };

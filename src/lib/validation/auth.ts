@@ -7,6 +7,7 @@ import {
   nameSchema,
   nigerianPhoneSchema,
   passwordSchema,
+  usernameSchema,
 } from "@/lib/validation/common";
 
 /** Registration step 1 — personal details. NIN is deliberately NOT collected here. */
@@ -28,6 +29,11 @@ export const registrationDetailsSchema = z.object({
   ),
   phone: nigerianPhoneSchema,
   email: emailSchema,
+  username: usernameSchema,
+  // Carried from the ?ref= on a referral link. Never trusted as proof of
+  // anything: an unknown code is ignored, so a mistyped link still lets the
+  // person register rather than failing validation on somebody else's typo.
+  referralCode: z.string().trim().max(32).optional(),
 });
 
 /** Registration step 2 — credentials and consent. */

@@ -98,6 +98,15 @@ enum TransactionType {
   WITHDRAWAL_PAID
   WITHDRAWAL_REJECTED
   ROLLOVER_CREATED
+  REFERRAL_BONUS_EARNED
+  REFERRAL_PAYOUT_PAID
+}
+
+enum ReferralEarningStatus {
+  PENDING
+  PAYABLE
+  PAID
+  CANCELLED
 }
 
 enum TransactionStatus {
@@ -172,23 +181,39 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile        UserProfile?
-  adminProfile   AdminProfile?
-  sessions       Session[]
-  kycSubmissions KycSubmission[]
-  investments    Investment[]
-  payments       Payment[]
-  withdrawals    Withdrawal[]
-  rollovers      Rollover[]
-  transactions   Transaction[]
-  notifications  Notification[]
-  tickets        SupportTicket[]
-  ticketMessages SupportMessage[]
-  loginEvents    LoginEvent[]
-  auditLogs      AuditLog[]              @relation("AuditActor")
-  emailTokens       EmailVerificationToken[]
-  resetTokens       PasswordResetToken[]
-  walletChanges     WalletChangeLog[]
+  // Affiliate programme. referredById is written once, at registration, from
+  // the link the person arrived through. It is never changed afterwards: the
+  // whole point is that nobody can argue later about who introduced whom.
+  /// Lowercase, unique, chosen at registration. Stored lowercase so that
+  /// uniqueness and lookup are the same question; the referral link is built
+  /// from it, and links get retyped by hand.
+  username     String? @unique
+  referralCode String? @unique
+  referredById String?
+
+  referredBy        User?             @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals         User[]            @relation("Referrals")
+  referralEarnings  ReferralEarning[] @relation("EarningReferrer")
+  generatedEarnings ReferralEarning[] @relation("EarningInvestor")
+  referralPayouts   ReferralPayout[]
+
+  profile             UserProfile?
+  adminProfile        AdminProfile?
+  sessions            Session[]
+  kycSubmissions      KycSubmission[]
+  investments         Investment[]
+  payments            Payment[]
+  withdrawals         Withdrawal[]
+  rollovers           Rollover[]
+  transactions        Transaction[]
+  notifications       Notification[]
+  tickets             SupportTicket[]
+  ticketMessages      SupportMessage[]
+  loginEvents         LoginEvent[]
+  auditLogs           AuditLog[]               @relation("AuditActor")
+  emailTokens         EmailVerificationToken[]
+  resetTokens         PasswordResetToken[]
+  walletChanges       WalletChangeLog[]
   twoFactorChallenges TwoFactorChallenge[]
   recoveryCodesHash   TwoFactorRecoveryCode[]
 
@@ -196,6 +221,7 @@ model User {
   @@index([status])
   @@index([kycStatus])
   @@index([createdAt])
+  @@index([referredById])
 }
 
 model UserProfile {
@@ -378,6 +404,9 @@ model Package {
   badge            String?
   displayOrder     Int      @default(0)
   isActive         Boolean  @default(true)
+  // Shown on the packages page but not subscribable. Distinct from isActive,
+  // which hides a package entirely: a coming-soon tier is advertising.
+  comingSoon       Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -434,12 +463,13 @@ model Investment {
   parentInvestment Investment?      @relation("InvestmentChain", fields: [parentInvestmentId], references: [id], onDelete: SetNull)
   childInvestment  Investment?      @relation("InvestmentChain")
 
-  payments     Payment[]
-  withdrawals  Withdrawal[]
-  transactions Transaction[]
-  rolloverFrom Rollover[]              @relation("RolloverSource")
-  rolloverTo   Rollover[]              @relation("RolloverTarget")
-  statusEvents InvestmentStatusEvent[]
+  payments        Payment[]
+  withdrawals     Withdrawal[]
+  transactions    Transaction[]
+  rolloverFrom    Rollover[]              @relation("RolloverSource")
+  rolloverTo      Rollover[]              @relation("RolloverTarget")
+  statusEvents    InvestmentStatusEvent[]
+  referralEarning ReferralEarning?
 
   @@index([userId])
   @@index([status])
@@ -567,6 +597,78 @@ model WalletChangeLog {
 // ---------------------------------------------------------------------------
 // Ledger, notifications, support
 // ---------------------------------------------------------------------------
+
+/// One referrer's commission on one matured investment.
+///
+/// investmentId is unique, which is what makes the maturity job safe to run
+/// twice: a second attempt to credit the same investment violates the
+/// constraint instead of paying the commission again. Manual credits, awarded
+/// for introductions made before the programme existed, carry no investment
+/// and so are exempt from that constraint (Postgres allows repeated NULLs).
+///
+/// The percentage and the investor's profit are copied in at the moment of
+/// maturity rather than read back later. Changing the rate in settings must
+/// never silently restate what somebody has already earned.
+model ReferralEarning {
+  id           String                @id @default(cuid())
+  reference    String                @unique
+  referrerId   String
+  investorId   String
+  investmentId String?               @unique
+  percentage   Decimal               @db.Decimal(8, 4)
+  profitAmount Decimal               @db.Decimal(18, 6)
+  amount       Decimal               @db.Decimal(18, 6)
+  status       ReferralEarningStatus @default(PAYABLE)
+  payoutId     String?
+  note         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  referrer   User            @relation("EarningReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  investor   User            @relation("EarningInvestor", fields: [investorId], references: [id], onDelete: Cascade)
+  investment Investment?     @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+  payout     ReferralPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, status])
+  @@index([investorId])
+  @@index([payoutId])
+}
+
+/// A request to be paid out accumulated commission.
+///
+/// Deliberately separate from Withdrawal. A withdrawal is always the end of an
+/// investment and every query, screen and rule around it assumes one; a payout
+/// belongs to somebody who may never have invested at all. Sharing the table
+/// would mean making that link optional and teaching the entire withdrawal
+/// path to cope with its absence, on the one flow where money leaves.
+model ReferralPayout {
+  id            String           @id @default(cuid())
+  reference     String           @unique
+  referrerId    String
+  amount        Decimal          @db.Decimal(18, 6)
+  method        WithdrawalMethod @default(USDT_WALLET)
+  walletAddress String?
+  walletNetwork String?
+  bankDetails   Json?
+  status        WithdrawalStatus @default(PENDING)
+
+  requestedAt     DateTime  @default(now())
+  processedById   String?
+  processedAt     DateTime?
+  paymentTxid     String?
+  rejectionReason String?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  referrer User              @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  earnings ReferralEarning[]
+
+  @@index([referrerId])
+  @@index([status])
+}
 
 model Transaction {
   id           String            @id @default(cuid())

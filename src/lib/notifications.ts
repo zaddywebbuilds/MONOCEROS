@@ -194,6 +194,37 @@ export const notifications = {
     type: "SUCCESS" as const,
     link: "/dashboard/investments",
   }),
+  referralEarned: (userId: string, reference: string) => ({
+    userId,
+    title: "Referral commission earned",
+    message: `${reference} has been added to your available commission.`,
+    type: "SUCCESS" as const,
+    link: "/dashboard/referrals",
+  }),
+  referralPayoutRequested: (userId: string, reference: string) => ({
+    userId,
+    title: "Payout requested",
+    message: `${reference} has been sent for approval.`,
+    type: "INFO" as const,
+    link: "/dashboard/referrals",
+  }),
+  referralPayoutUpdated: (userId: string, reference: string, status: string) => ({
+    userId,
+    title: status === "PAID" ? "Commission paid" : "Payout approved",
+    message:
+      status === "PAID"
+        ? `${reference} has been paid to your wallet.`
+        : `${reference} was approved and is being processed.`,
+    type: "SUCCESS" as const,
+    link: "/dashboard/referrals",
+  }),
+  referralPayoutRejected: (userId: string, reference: string, reason: string) => ({
+    userId,
+    title: "Payout declined",
+    message: `${reference} was declined${reason ? `: ${reason}` : "."} Your commission remains available.`,
+    type: "WARNING" as const,
+    link: "/dashboard/referrals",
+  }),
   passwordChanged: (userId: string) => ({
     userId,
     title: "Password changed",

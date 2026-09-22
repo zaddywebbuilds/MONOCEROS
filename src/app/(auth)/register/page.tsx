@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ package?: string }>;
+  searchParams: Promise<{ package?: string; ref?: string }>;
 }) {
   const [params, session] = await Promise.all([searchParams, getSession().catch(() => null)]);
 
@@ -31,7 +31,7 @@ export default async function RegisterPage({
         </>
       }
     >
-      <RegisterForm packageSlug={params.package} />
+      <RegisterForm packageSlug={params.package} referralCode={params.ref} />
     </AuthCard>
   );
 }

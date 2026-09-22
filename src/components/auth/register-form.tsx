@@ -17,12 +17,18 @@ const STEPS = ["Your details", "Security"] as const;
 
 /** Client-side gate so a user is not sent to step 2 with an empty step 1. */
 function step1Missing(values: Record<string, string>): string[] {
-  return ["firstName", "surname", "dateOfBirth", "phone", "email"].filter(
+  return ["firstName", "surname", "dateOfBirth", "phone", "email", "username"].filter(
     (key) => !values[key]?.trim(),
   );
 }
 
-export function RegisterForm({ packageSlug }: { packageSlug?: string }) {
+export function RegisterForm({
+  packageSlug,
+  referralCode,
+}: {
+  packageSlug?: string;
+  referralCode?: string;
+}) {
   const [state, formAction] = useActionState(registerAction, idleState);
   const [step, setStep] = React.useState(0);
   const [values, setValues] = React.useState<Record<string, string>>({});
@@ -34,7 +40,7 @@ export function RegisterForm({ packageSlug }: { packageSlug?: string }) {
   // If the server rejected a step-1 field, bring the user back to step 1.
   React.useEffect(() => {
     if (!state.fieldErrors) return;
-    const step1Keys = ["firstName", "surname", "otherName", "dateOfBirth", "phone", "email"];
+    const step1Keys = ["firstName", "surname", "otherName", "dateOfBirth", "phone", "email", "username"];
     if (step1Keys.some((key) => state.fieldErrors?.[key])) setStep(0);
   }, [state.fieldErrors]);
 
@@ -46,6 +52,7 @@ export function RegisterForm({ packageSlug }: { packageSlug?: string }) {
   return (
     <form action={formAction} className="space-y-6" noValidate>
       {packageSlug ? <input type="hidden" name="package" value={packageSlug} /> : null}
+      {referralCode ? <input type="hidden" name="referralCode" value={referralCode} /> : null}
 
       {/* Step indicator */}
       <ol className="flex items-center gap-3" aria-label="Registration progress">
@@ -181,6 +188,26 @@ export function RegisterForm({ packageSlug }: { packageSlug?: string }) {
             value={values.email ?? ""}
             onChange={set("email")}
             aria-invalid={Boolean(fieldError("email"))}
+            required
+          />
+        </Field>
+
+        <Field
+          label="Username"
+          htmlFor="username"
+          required
+          hint="Letters, numbers and underscore. Used for your referral link, so pick something you are happy to share."
+          error={fieldError("username")}
+        >
+          <Input
+            id="username"
+            name="username"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={values.username ?? ""}
+            onChange={set("username")}
+            aria-invalid={Boolean(fieldError("username"))}
             required
           />
         </Field>

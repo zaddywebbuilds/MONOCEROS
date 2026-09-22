@@ -23,6 +23,7 @@ import {
 } from "@/lib/auth/totp";
 import { requestContext } from "@/lib/request";
 import { storage } from "@/lib/storage";
+import { autoIssueReferralCode, resolveReferralCode } from "@/server/services/referrals";
 import type { SessionUser } from "@/lib/auth/session";
 import { formatBusinessDateTime } from "@/lib/time";
 import { notify, notifications } from "@/lib/notifications";
@@ -58,6 +59,13 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
   const passwordHash = await hashPassword(input.password);
   const dateOfBirth = new Date(`${input.dateOfBirth}T00:00:00Z`);
 
+  // An unrecognised code is dropped rather than rejected. The person following
+  // the link did not choose it and should not be blocked by somebody else's
+  // mistake; the referrer simply goes uncredited.
+  const referredById = input.referralCode
+    ? await resolveReferralCode(input.referralCode)
+    : null;
+
   let userId: string;
   let verificationToken: string;
 
@@ -69,6 +77,8 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
           email: input.email,
           passwordHash,
           role: "USER",
+          username: input.username,
+          referredById,
           profile: {
             create: {
               firstName: input.firstName,
@@ -93,6 +103,8 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
 
       await notify(notifications.registered(user.id), tx);
 
+      await autoIssueReferralCode(user.id, input.username, tx);
+
       return { userId: user.id, token };
     });
 
@@ -100,6 +112,15 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
     verificationToken = result.token;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      // A username clash must be said plainly. The silence below protects the
+      // privacy of an email address; a username is chosen, public by design,
+      // and leaving someone to guess why registration failed helps nobody.
+      const target = error.meta?.target;
+      const fields = Array.isArray(target) ? target.map(String) : [String(target ?? "")];
+      if (fields.some((f) => f.includes("username"))) {
+        throw new BusinessRuleError("That username is already taken. Please choose another.");
+      }
+
       // Do not confirm that the address exists. Tell the existing owner instead.
       const existing = await prisma.user.findUnique({ where: { email: input.email } });
       if (existing && !existing.emailVerifiedAt) {

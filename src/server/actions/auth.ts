@@ -27,6 +27,7 @@ import {
   TWO_FACTOR_COOKIE,
 } from "@/server/services/accounts";
 import { prisma } from "@/lib/prisma";
+import { REFERRAL_COOKIE } from "@/lib/referral";
 import {
   errorState,
   isFrameworkError,
@@ -54,7 +55,13 @@ export async function registerAction(
 
   try {
     enforceRateLimit("register", await clientKey());
-    await registerUser(parsed.data);
+
+    // The link may have been followed some time before the form was filled in,
+    // so fall back to the cookie /r/<code> left behind.
+    const referralCode =
+      parsed.data.referralCode ?? (await cookies()).get(REFERRAL_COOKIE)?.value;
+
+    await registerUser({ ...parsed.data, referralCode });
   } catch (error) {
     if (isFrameworkError(error)) throw error;
     return toErrorState(error);

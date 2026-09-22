@@ -85,6 +85,7 @@ describe("registration", () => {
     dateOfBirth: "1994-05-17",
     phone: "08012345678",
     email: "ada@example.com",
+    username: "ada_obi",
     password: "Str0ngPass!",
     confirmPassword: "Str0ngPass!",
     acceptedTerms: "on",

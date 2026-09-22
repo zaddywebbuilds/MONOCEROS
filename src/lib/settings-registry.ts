@@ -55,6 +55,19 @@ export const SETTING_DEFAULTS = {
   "payment.wallet.SOLANA": "",
   "payment.instructions":
     "Send the exact amount shown using the displayed network only. After sending, submit your transaction hash so the finance team can verify the transfer.",
+  // --- Referrals -----------------------------------------------------------
+  "referral.enabled": true,
+  /**
+   * Whether every account gets a referral link at registration, or only those
+   * an administrator admits. Off means invitation-only.
+   */
+  "referral.openToAll": true,
+  "referral.percentage": 10,
+  "referral.minimumPayout": 50,
+  "referral.requireKycForPayout": true,
+  "referral.terms":
+    "You earn a commission when someone who joined through your link reaches maturity on an investment. Commission is calculated on their profit, not on the amount they invested.",
+
   "payment.minConfirmations": 1,
   "payment.allowedNetworks": ["TRC20", "ERC20", "BEP20", "POLYGON", "SOLANA"] as string[],
 
@@ -177,6 +190,25 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
     description: "Leave blank to hide this network from investors.",
   },
   "payment.instructions": { group: "payments", label: "Payment instructions" },
+  "referral.enabled": { group: "referrals", label: "Referral programme enabled" },
+  "referral.openToAll": {
+    group: "referrals",
+    label: "Open to every account",
+    description:
+      "On, everyone gets a referral link when they register. Off, only accounts you admit can earn commission.",
+  },
+  "referral.percentage": {
+    group: "referrals",
+    label: "Commission percentage",
+    description: "Percentage of the referred investor's PROFIT, not of their capital.",
+  },
+  "referral.minimumPayout": { group: "referrals", label: "Minimum payout amount" },
+  "referral.requireKycForPayout": {
+    group: "referrals",
+    label: "Require identity verification before payout",
+    description: "Commission is still earned without it; only cashing out is held.",
+  },
+  "referral.terms": { group: "referrals", label: "Referral terms shown to users" },
   "payment.minConfirmations": { group: "payments", label: "Minimum confirmations" },
   "payment.allowedNetworks": { group: "payments", label: "Selectable networks" },
   "cycle.weekday": { group: "investments", label: "Cycle weekday", description: "0 = Sunday … 6 = Saturday" },

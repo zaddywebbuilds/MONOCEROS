@@ -47,6 +47,11 @@ export const AUDIT_ACTION = {
   USER_SUSPENDED: "user.suspended",
   USER_UNSUSPENDED: "user.unsuspended",
   USER_DELETED: "user.deleted",
+  REFERRER_CHANGED: "referral.referrer_changed",
+  REFERRAL_CODE_ISSUED: "referral.code_issued",
+  REFERRAL_CODE_REVOKED: "referral.code_revoked",
+  REFERRAL_BONUS_MANUAL: "referral.bonus_awarded_manually",
+  REFERRAL_PAYOUT_DECIDED: "referral.payout_decided",
   TICKET_STATUS_CHANGED: "support.status_changed",
 } as const;
 

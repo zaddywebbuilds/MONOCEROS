@@ -43,6 +43,12 @@ const GROUPS: { id: string; title: string; description: string }[] = [
     description: "Available methods, minimum amount and the password confirmation requirement.",
   },
   {
+    id: "referrals",
+    title: "Referrals",
+    description:
+      "Commission rate, minimum payout and whether identity verification is required before commission can be cashed out. The rate is applied to the referred investor's profit.",
+  },
+  {
     id: "kyc",
     title: "Identity verification",
     description: "Accepted documents, minimum age, upload limit and the notice shown to investors.",
