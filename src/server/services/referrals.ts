@@ -135,6 +135,58 @@ export async function issueReferralCode(input: {
 }
 
 /**
+ * Replaces somebody's code with a fresh one.
+ *
+ * The old link stops working immediately, which is the point: a link that has
+ * been posted somewhere it should not have been, or shared with the wrong
+ * person, can be retired without taking the affiliate off the programme.
+ *
+ * Introductions already made are untouched. Attribution lives on the invited
+ * account as referredById, written once at registration, so rotating a code
+ * can never detach somebody from the person who actually brought them, nor
+ * move them to whoever holds that code next.
+ */
+export async function regenerateReferralCode(input: {
+  userId: string;
+  admin: SessionUser;
+  reason?: string;
+}): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: input.userId },
+    select: { referralCode: true, username: true, profile: { select: { firstName: true } } },
+  });
+  if (!user) throw new BusinessRuleError("Account not found.");
+  if (!user.referralCode) {
+    throw new BusinessRuleError("This account does not have a referral link to replace.");
+  }
+
+  const handle = user.username ?? user.profile?.firstName ?? null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = buildCode(handle);
+    try {
+      await prisma.user.update({ where: { id: input.userId }, data: { referralCode: code } });
+
+      await writeAudit({
+        actor: input.admin,
+        action: AUDIT_ACTION.REFERRAL_CODE_REGENERATED,
+        entityType: "User",
+        entityId: input.userId,
+        oldValue: { referralCode: user.referralCode },
+        newValue: { referralCode: code },
+        reason: input.reason,
+      });
+
+      return code;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
+      throw error;
+    }
+  }
+  throw new Error("Could not allocate a new referral code.");
+}
+
+/**
  * Withdraws affiliate status.
  *
  * Commission already earned is left alone. Taking someone off the programme is

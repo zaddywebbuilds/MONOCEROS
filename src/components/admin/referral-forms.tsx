@@ -89,19 +89,40 @@ export function ReferralCodeForm({
   code: string | null;
 }) {
   const [state, formAction] = useActionState(setReferralCodeAction, idleState);
+  const [action, setAction] = React.useState("REGENERATE");
 
   return (
     <form action={formAction} className="space-y-3" noValidate>
       <input type="hidden" name="userId" value={userId} />
-      <input type="hidden" name="action" value={code ? "REVOKE" : "ISSUE"} />
+      {code ? null : <input type="hidden" name="action" value="ISSUE" />}
 
       <FormError>{state.status === "error" ? state.message : null}</FormError>
       <FormSuccess>{state.status === "success" ? state.message : null}</FormSuccess>
 
       {code ? (
-        <p className="break-all text-[12.5px] text-fg-muted">
-          Referral link: <span className="font-mono text-fg">/r/{code}</span>
-        </p>
+        <>
+          <p className="break-all text-[12.5px] text-fg-muted">
+            Referral link: <span className="font-mono text-fg">/r/{code}</span>
+          </p>
+
+          <Field label="Action" htmlFor={`code-action-${userId}`}>
+            <Select
+              id={`code-action-${userId}`}
+              name="action"
+              value={action}
+              onChange={(event) => setAction(event.target.value)}
+            >
+              <option value="REGENERATE">Replace with a new link</option>
+              <option value="REVOKE">Withdraw from the programme</option>
+            </Select>
+          </Field>
+
+          <p className="text-[11.5px] leading-relaxed text-fg-subtle">
+            {action === "REGENERATE"
+              ? "The old link stops working immediately. People already introduced stay credited to them, and so does anything earned."
+              : "They keep every commission already earned. Only the ability to introduce new people is removed."}
+          </p>
+        </>
       ) : (
         <p className="text-[12.5px] leading-relaxed text-fg-muted">
           This account cannot earn commission. Issuing a link admits them to the referral
@@ -112,14 +133,26 @@ export function ReferralCodeForm({
       <Field
         label="Reason"
         htmlFor={`code-reason-${userId}`}
-        required={Boolean(code)}
+        required={code ? action === "REVOKE" : false}
         error={state.fieldErrors?.reason}
       >
-        <Input id={`code-reason-${userId}`} name="reason" required={Boolean(code)} />
+        <Input
+          id={`code-reason-${userId}`}
+          name="reason"
+          required={code ? action === "REVOKE" : false}
+        />
       </Field>
 
-      <SubmitButton size="sm" variant={code ? "danger" : "primary"} pendingLabel="Saving…">
-        {code ? "Withdraw referral link" : "Issue referral link"}
+      <SubmitButton
+        size="sm"
+        variant={code && action === "REVOKE" ? "danger" : "primary"}
+        pendingLabel="Saving…"
+      >
+        {!code
+          ? "Issue referral link"
+          : action === "REGENERATE"
+            ? "Generate new link"
+            : "Withdraw referral link"}
       </SubmitButton>
     </form>
   );

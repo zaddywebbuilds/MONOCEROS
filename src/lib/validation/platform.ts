@@ -261,7 +261,7 @@ export const referralPayoutDecisionSchema = z.object({
 
 export const referralCodeSchema = z.object({
   userId: z.string().min(1),
-  action: z.enum(["ISSUE", "REVOKE"]),
+  action: z.enum(["ISSUE", "REGENERATE", "REVOKE"]),
   reason: safeText(300, "Reason").optional(),
 });
 

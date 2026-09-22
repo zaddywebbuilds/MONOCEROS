@@ -16,6 +16,7 @@ import {
   creditManualReferralBonus,
   decideReferralPayout,
   issueReferralCode,
+  regenerateReferralCode,
   requestReferralPayout,
   revokeReferralCode,
   setReferrer,
@@ -106,6 +107,16 @@ export async function setReferralCodeAction(
       });
       revalidatePath(`/admin/users/${parsed.data.userId}`);
       return successState(`Referral link issued: ${code}`);
+    }
+
+    if (parsed.data.action === "REGENERATE") {
+      const code = await regenerateReferralCode({
+        userId: parsed.data.userId,
+        admin,
+        reason: parsed.data.reason,
+      });
+      revalidatePath(`/admin/users/${parsed.data.userId}`);
+      return successState(`New referral link: ${code}. The previous one no longer works.`);
     }
 
     if (!parsed.data.reason) {
