@@ -19,6 +19,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { Countdown, RemainingLabel } from "@/components/countdown";
 import { InvestmentTimeline } from "@/components/dashboard/investment-timeline";
 import { requireUser } from "@/lib/auth/rbac";
+import { referralHeadline } from "@/server/services/referrals";
+import { appUrl } from "@/lib/env";
+import { referralLink } from "@/lib/referral";
 import { prisma } from "@/lib/prisma";
 import { formatUSD } from "@/lib/money";
 import {
@@ -42,7 +45,7 @@ export const metadata: Metadata = { title: "Overview" };
 export default async function DashboardOverviewPage() {
   const user = await requireUser("/dashboard");
 
-  const [summary, investments, cycleStart, recentNotifications] = await Promise.all([
+  const [summary, investments, cycleStart, recentNotifications, referral] = await Promise.all([
     getPortfolioSummary(user.id),
     prisma.investment.findMany({
       where: {
@@ -59,6 +62,9 @@ export default async function DashboardOverviewPage() {
       orderBy: { createdAt: "desc" },
       take: 4,
     }),
+    // The referral page is buried under "More" on a phone, so the link is
+    // surfaced here too. Null for anyone not on the programme.
+    referralHeadline(user.id),
   ]);
 
   const cycleCountdown = countdownTo(cycleStart);
@@ -107,6 +113,30 @@ export default async function DashboardOverviewPage() {
           </Link>
           .
         </InfoNote>
+      ) : null}
+
+      {referral?.code ? (
+        <div className="mb-6 rounded-xl border border-accent-800/50 bg-accent-900/15 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-semibold text-fg">
+                Earn {referral.percentage}% when someone you introduce reaches maturity
+              </p>
+              <p className="mt-1 break-all text-[12.5px] text-fg-muted">
+                Your link:{" "}
+                <span className="font-mono text-accent-300">
+                  {referralLink(appUrl, referral.code)}
+                </span>
+              </p>
+            </div>
+            <Link
+              href="/dashboard/referrals"
+              className="shrink-0 rounded-lg border border-accent-700/60 px-3.5 py-2 text-[12.5px] font-medium text-accent-200 transition-colors hover:bg-accent-900/40"
+            >
+              Open referrals
+            </Link>
+          </div>
+        </div>
       ) : null}
 
       {/* Summary tiles --------------------------------------------------- */}

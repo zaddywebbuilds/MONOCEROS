@@ -282,6 +282,23 @@ export async function creditReferralOnMaturity(
   return { referrerId: investor.referredById, amount };
 }
 
+/**
+ * Just enough to advertise the programme on the overview page: the code and
+ * the rate, or null when the account is not on it. Deliberately lighter than
+ * referralSummary, which aggregates earnings the overview does not show.
+ */
+export async function referralHeadline(
+  userId: string,
+): Promise<{ code: string; percentage: number } | null> {
+  const [user, settings] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { referralCode: true } }),
+    getSettings(),
+  ]);
+
+  if (!user?.referralCode || !settings["referral.enabled"]) return null;
+  return { code: user.referralCode, percentage: Number(settings["referral.percentage"]) };
+}
+
 export interface ReferralSummary {
   code: string | null;
   enabled: boolean;
