@@ -84,11 +84,12 @@ export function PackageCard({
           </span>
           <h3 className="text-[15px] font-semibold tracking-tight text-fg">{pkg.name}</h3>
         </div>
-        {pkg.comingSoon ? (
-          <Badge variant="outline">Coming soon</Badge>
-        ) : pkg.badge ? (
-          <Badge variant={featured ? "accent" : "outline"}>{pkg.badge}</Badge>
-        ) : null}
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {pkg.badge ? (
+            <Badge variant={featured ? "accent" : "outline"}>{pkg.badge}</Badge>
+          ) : null}
+          {pkg.comingSoon ? <Badge variant="outline">Coming soon</Badge> : null}
+        </div>
       </div>
 
       {/* Lead with what the investor receives, not with the price. */}
