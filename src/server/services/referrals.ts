@@ -57,30 +57,31 @@ function buildCode(handle: string | null | undefined): string {
 }
 
 /**
- * Issues a code at registration, when the programme is open to everyone.
+ * Allocates a code for a new registration, or null when the programme is
+ * invitation-only.
  *
- * Separate from issueReferralCode because that one records an administrator
- * deciding to admit somebody, and this is nobody deciding anything. Returns
- * null when the programme is invitation-only, which is the owner's stated
- * preference; the switch is referral.openToAll.
+ * Everything here runs BEFORE the registration transaction opens, and that is
+ * the point. Reading settings or retrying a unique-constraint clash from
+ * inside an interactive transaction needs a second connection that the
+ * transaction itself is holding, so it waits for a connection that cannot be
+ * freed until it finishes: registration then died on the 20-second transaction
+ * timeout rather than doing anything wrong. The caller puts the returned code
+ * straight into the user row it is already creating.
+ *
+ * Separate from issueReferralCode because that records an administrator
+ * deciding to admit somebody, and this is nobody deciding anything.
  */
-export async function autoIssueReferralCode(
-  userId: string,
-  username: string,
-  tx: Tx,
-): Promise<string | null> {
+export async function allocateReferralCode(username: string): Promise<string | null> {
   const settings = await getSettings();
   if (!settings["referral.enabled"] || !settings["referral.openToAll"]) return null;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const code = buildCode(username);
-    try {
-      await tx.user.update({ where: { id: userId }, data: { referralCode: code } });
-      return code;
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
-      throw error;
-    }
+    const taken = await prisma.user.findUnique({
+      where: { referralCode: code },
+      select: { id: true },
+    });
+    if (!taken) return code;
   }
   return null;
 }
@@ -189,6 +190,26 @@ export async function resolveReferralCode(code: string): Promise<string | null> 
   return referrer?.id ?? null;
 }
 
+export interface ReferralTerms {
+  enabled: boolean;
+  percentage: number;
+}
+
+/**
+ * The commission terms, read once before a batch of maturities.
+ *
+ * Passed into creditReferralOnMaturity rather than read inside it, for the
+ * same reason as allocateReferralCode: a settings read needs a connection the
+ * surrounding transaction is holding.
+ */
+export async function currentReferralTerms(): Promise<ReferralTerms> {
+  const settings = await getSettings();
+  return {
+    enabled: Boolean(settings["referral.enabled"]),
+    percentage: Number(settings["referral.percentage"]),
+  };
+}
+
 /**
  * Commission on one matured investment.
  *
@@ -199,9 +220,9 @@ export async function resolveReferralCode(code: string): Promise<string | null> 
 export async function creditReferralOnMaturity(
   investment: { id: string; userId: string; reference: string; principalAmount: Prisma.Decimal; maturityAmount: Prisma.Decimal },
   tx: Tx,
+  terms: ReferralTerms,
 ): Promise<{ referrerId: string; amount: Prisma.Decimal } | null> {
-  const settings = await getSettings();
-  if (!settings["referral.enabled"]) return null;
+  if (!terms.enabled) return null;
 
   const investor = await tx.user.findUnique({
     where: { id: investment.userId },
@@ -217,7 +238,7 @@ export async function creditReferralOnMaturity(
   const profit = subMoney(investment.maturityAmount, investment.principalAmount);
   if (profit.lte(ZERO)) return null;
 
-  const percentage = money(settings["referral.percentage"]);
+  const percentage = money(terms.percentage);
   if (percentage.lte(ZERO)) return null;
 
   const amount = profit.mul(percentage).div(100).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);

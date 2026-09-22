@@ -13,7 +13,7 @@ import { sendInvestmentActivatedEmail, sendInvestmentMaturedEmail } from "@/lib/
 import { writeSystemAudit, AUDIT_ACTION } from "@/lib/audit";
 import { recordTransaction } from "@/server/services/ledger";
 import { reconcileCycleStatuses } from "@/server/services/cycles";
-import { creditReferralOnMaturity } from "@/server/services/referrals";
+import { creditReferralOnMaturity, currentReferralTerms } from "@/server/services/referrals";
 import { BusinessRuleError } from "@/lib/errors";
 
 /**
@@ -282,6 +282,9 @@ export async function matureDueInvestments(now: Date = new Date()): Promise<Matu
 
   const references: string[] = [];
 
+  // Read once, outside the loop and outside every transaction below.
+  const referralTerms = await currentReferralTerms();
+
   for (const investment of due) {
     await prisma.$transaction(async (tx) => {
       await transition(investment, "MATURED", tx, {
@@ -306,7 +309,7 @@ export async function matureDueInvestments(now: Date = new Date()): Promise<Matu
       // is the first point at which the profit it is calculated from exists.
       // Inside the same transaction, so a failure cannot leave an investment
       // matured with its referrer uncredited.
-      await creditReferralOnMaturity(investment, tx);
+      await creditReferralOnMaturity(investment, tx, referralTerms);
 
       await writeSystemAudit(
         {

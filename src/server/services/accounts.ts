@@ -23,7 +23,7 @@ import {
 } from "@/lib/auth/totp";
 import { requestContext } from "@/lib/request";
 import { storage } from "@/lib/storage";
-import { autoIssueReferralCode, resolveReferralCode } from "@/server/services/referrals";
+import { allocateReferralCode, resolveReferralCode } from "@/server/services/referrals";
 import type { SessionUser } from "@/lib/auth/session";
 import { formatBusinessDateTime } from "@/lib/time";
 import { notify, notifications } from "@/lib/notifications";
@@ -66,6 +66,11 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
     ? await resolveReferralCode(input.referralCode)
     : null;
 
+  // Allocated before the transaction opens. Anything that needs its own
+  // connection must happen out here, or it waits on the connection the
+  // transaction is holding and dies on the transaction timeout.
+  const referralCode = await allocateReferralCode(input.username);
+
   let userId: string;
   let verificationToken: string;
 
@@ -78,6 +83,7 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
           passwordHash,
           role: "USER",
           username: input.username,
+          referralCode,
           referredById,
           profile: {
             create: {
@@ -102,8 +108,6 @@ export async function registerUser(input: RegistrationInput): Promise<{ userId: 
       });
 
       await notify(notifications.registered(user.id), tx);
-
-      await autoIssueReferralCode(user.id, input.username, tx);
 
       return { userId: user.id, token };
     });
