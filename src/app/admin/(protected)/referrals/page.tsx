@@ -20,6 +20,8 @@ import { prisma } from "@/lib/prisma";
 import { formatUSD } from "@/lib/money";
 import { formatBusinessDateTime } from "@/lib/time";
 import { getSettings } from "@/lib/settings";
+import { appUrl } from "@/lib/env";
+import { referralLink } from "@/lib/referral";
 
 export const metadata: Metadata = { title: "Referrals" };
 
@@ -76,6 +78,18 @@ export default async function AdminReferralsPage() {
   });
   const byId = new Map(referrers.map((r) => [r.id, r]));
 
+  const affiliates = await prisma.user.findMany({
+    where: { referralCode: { not: null } },
+    select: {
+      id: true,
+      email: true,
+      referralCode: true,
+      profile: { select: { firstName: true, surname: true } },
+      _count: { select: { referrals: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
   return (
     <DashboardPage className="max-w-7xl">
       <PageTitle
@@ -110,6 +124,56 @@ export default async function AdminReferralsPage() {
         A referral link is issued from each investor&apos;s own page under Users. Commission already
         earned is never removed by withdrawing somebody&apos;s link.
       </InfoNote>
+
+      <Section title="Active affiliates" className="mt-0">
+        {affiliates.length === 0 ? (
+          <EmptyState
+            icon={<Share2 className="size-5" />}
+            title="No referral links issued yet"
+            description="Go to a user's profile under Users to issue them a referral link."
+          />
+        ) : (
+          <TableScroll>
+            <Table className="min-w-[640px]">
+              <THead>
+                <tr>
+                  <TH>Affiliate</TH>
+                  <TH>Referral link</TH>
+                  <TH className="text-right">People referred</TH>
+                </tr>
+              </THead>
+              <TBody>
+                {affiliates.map((affiliate) => (
+                  <TR key={affiliate.id}>
+                    <TD>
+                      <Link
+                        href={`/admin/users/${affiliate.id}`}
+                        className="underline underline-offset-2"
+                      >
+                        {affiliate.profile
+                          ? `${affiliate.profile.firstName} ${affiliate.profile.surname}`
+                          : affiliate.email}
+                      </Link>
+                      <span className="ml-2 text-[11.5px] text-fg-subtle">{affiliate.email}</span>
+                    </TD>
+                    <TD>
+                      <a
+                        href={referralLink(appUrl, affiliate.referralCode!)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-[12px] text-accent-300 underline underline-offset-2"
+                      >
+                        {referralLink(appUrl, affiliate.referralCode!)}
+                      </a>
+                    </TD>
+                    <TD className="text-right">{affiliate._count.referrals}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </TableScroll>
+        )}
+      </Section>
 
       <Section title="Payout requests" className="mt-0">
         {openPayouts.length === 0 ? (
