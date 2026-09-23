@@ -43,6 +43,27 @@ export interface WithdrawalRequestInput {
   password: string;
 }
 
+/**
+ * Returns the datetime when the wallet lock expires, or null if there is none.
+ *
+ * The lock is triggered by any address change (not the first-time setup).
+ * A setting of 0 disables the feature entirely.
+ */
+export async function walletLockedUntil(userId: string): Promise<Date | null> {
+  const settings = await getSettings();
+  const lockHours = Number(settings["withdrawal.walletChangeLockHours"]);
+  if (!lockHours) return null;
+
+  const lastChange = await prisma.walletChangeLog.findFirst({
+    where: { userId, oldAddress: { not: null } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!lastChange) return null;
+
+  const expiresAt = new Date(lastChange.createdAt.getTime() + lockHours * 3_600_000);
+  return expiresAt > new Date() ? expiresAt : null;
+}
+
 export async function requestWithdrawal(
   input: WithdrawalRequestInput,
 ): Promise<{ reference: string }> {
@@ -57,6 +78,18 @@ export async function requestWithdrawal(
   if (settings["withdrawal.requirePasswordConfirmation"]) {
     const ok = await verifyPassword(input.password, user.passwordHash);
     if (!ok) throw new BusinessRuleError("That password is not correct.");
+  }
+
+  const locked = await walletLockedUntil(input.userId);
+  if (locked) {
+    const when = locked.toLocaleString("en-GB", {
+      timeZone: "Africa/Lagos",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    throw new BusinessRuleError(
+      `Your withdrawal wallet was recently changed. Withdrawals are locked until ${when} WAT to protect your account.`,
+    );
   }
 
   if (!settings["withdrawal.methods"].includes(input.method)) {

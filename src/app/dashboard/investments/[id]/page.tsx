@@ -22,6 +22,7 @@ import { getInvestmentForUser } from "@/server/services/investments";
 import { previewRollover } from "@/server/services/rollovers";
 import { upcomingCycleStart } from "@/server/services/cycles";
 import { getSettings } from "@/lib/settings";
+import { walletLockedUntil } from "@/server/services/withdrawals";
 import { formatUSD } from "@/lib/money";
 import {
   countdownTo,
@@ -66,6 +67,9 @@ export default async function InvestmentDetailPage({
 
   const rolloverPreview =
     investment.status === "MATURED" ? await previewRollover(user.id, investment.id) : null;
+
+  const walletLock =
+    investment.status === "MATURED" ? await walletLockedUntil(user.id) : null;
 
   const latestPayment = investment.payments[0];
   const latestWithdrawal = investment.withdrawals[0];
@@ -195,6 +199,7 @@ export default async function InvestmentDetailPage({
                   networks={settings["payment.allowedNetworks"]}
                   savedWallet={profile?.withdrawalWalletAddress ?? null}
                   savedNetwork={profile?.withdrawalWalletNetwork ?? null}
+                  walletLockedUntil={walletLock?.toISOString() ?? null}
                   requirePassword={settings["withdrawal.requirePasswordConfirmation"]}
                   rollover={{
                     mode: rolloverPreview.mode,

@@ -28,6 +28,7 @@ import {
   PAYMENT_STATUS_LABEL,
   PAYMENT_STATUS_TONE,
 } from "@/lib/domain/investment-status";
+import { explorerUrl } from "@/server/services/chain";
 
 export const metadata: Metadata = { title: "Payment" };
 
@@ -203,16 +204,28 @@ export default async function PaymentPage({ params }: { params: Promise<{ id: st
                       : "Your payment details are with the finance team. There is nothing else for you to do — we will notify you when a decision is made."}
                   </p>
                   {payment.transactionHash ? (
-                    <dl className="mt-3 border-t border-ink-700/60 pt-2">
-                      <DetailRow label="Transaction hash" mono>
-                        {payment.transactionHash}
-                      </DetailRow>
-                      {payment.submittedAmount ? (
-                        <DetailRow label="Amount submitted">
-                          {formatAsset(payment.submittedAmount, asset)}
+                    <>
+                      <dl className="mt-3 border-t border-ink-700/60 pt-2">
+                        <DetailRow label="Transaction hash" mono>
+                          {payment.transactionHash}
                         </DetailRow>
+                        {payment.submittedAmount ? (
+                          <DetailRow label="Amount submitted">
+                            {formatAsset(payment.submittedAmount, asset)}
+                          </DetailRow>
+                        ) : null}
+                      </dl>
+                      {explorerUrl(payment.network, payment.transactionHash) ? (
+                        <a
+                          href={explorerUrl(payment.network, payment.transactionHash)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-300 underline underline-offset-2"
+                        >
+                          View on block explorer
+                        </a>
                       ) : null}
-                    </dl>
+                    </>
                   ) : null}
                 </div>
               )}

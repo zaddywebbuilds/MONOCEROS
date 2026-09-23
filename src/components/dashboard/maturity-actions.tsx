@@ -26,6 +26,7 @@ export function MaturityActions({
   networks,
   savedWallet,
   savedNetwork,
+  walletLockedUntil,
   requirePassword,
   rollover,
   packages,
@@ -36,6 +37,7 @@ export function MaturityActions({
   networks: string[];
   savedWallet: string | null;
   savedNetwork: string | null;
+  walletLockedUntil: string | null;
   requirePassword: boolean;
   rollover: RolloverPreview;
   packages: { slug: string; name: string; returnPercentage: string }[];
@@ -90,6 +92,7 @@ export function MaturityActions({
           networks={networks}
           savedWallet={savedWallet}
           savedNetwork={savedNetwork}
+          walletLockedUntil={walletLockedUntil}
           requirePassword={requirePassword}
         />
       </div>
@@ -118,6 +121,7 @@ function WithdrawForm({
   networks,
   savedWallet,
   savedNetwork,
+  walletLockedUntil,
   requirePassword,
 }: {
   investmentId: string;
@@ -125,6 +129,7 @@ function WithdrawForm({
   networks: string[];
   savedWallet: string | null;
   savedNetwork: string | null;
+  walletLockedUntil: string | null;
   requirePassword: boolean;
 }) {
   const [state, formAction] = useActionState(requestWithdrawalAction, idleState);
@@ -132,6 +137,21 @@ function WithdrawForm({
 
   if (state.status === "success") {
     return <FormSuccess>{state.message}</FormSuccess>;
+  }
+
+  if (walletLockedUntil) {
+    const unlockDate = new Date(walletLockedUntil).toLocaleString("en-GB", {
+      timeZone: "Africa/Lagos",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+    return (
+      <InfoNote tone="warning">
+        <strong className="font-semibold">Withdrawal temporarily locked.</strong> Your destination
+        wallet was recently changed. As a security measure, withdrawals are unavailable until{" "}
+        {unlockDate} WAT. If you did not make this change, contact support immediately.
+      </InfoNote>
+    );
   }
 
   return (

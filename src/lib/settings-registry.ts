@@ -94,6 +94,12 @@ export const SETTING_DEFAULTS = {
   "withdrawal.methods": ["USDT_WALLET"] as string[],
   "withdrawal.requirePasswordConfirmation": true,
   "withdrawal.minAmount": 0,
+  /**
+   * Hours that must pass after a wallet address change before a withdrawal can
+   * be made. Protects against account takeover: an attacker who changes the
+   * address cannot immediately drain it. 0 disables the lock.
+   */
+  "withdrawal.walletChangeLockHours": 48,
   "withdrawal.instructions":
     "Withdrawals are reviewed and settled manually by the finance team. Confirm your destination wallet carefully — transfers cannot be reversed.",
 
@@ -247,6 +253,12 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
     label: "Require password confirmation",
   },
   "withdrawal.minAmount": { group: "withdrawals", label: "Minimum withdrawal amount" },
+  "withdrawal.walletChangeLockHours": {
+    group: "withdrawals",
+    label: "Wallet change lock period (hours)",
+    description:
+      "How long after a wallet address change before a withdrawal is allowed. 0 disables the lock.",
+  },
   "withdrawal.instructions": { group: "withdrawals", label: "Withdrawal instructions" },
   "kyc.ninRequired": { group: "kyc", label: "NIN required" },
   "kyc.allowedIdTypes": { group: "kyc", label: "Accepted identity documents" },
