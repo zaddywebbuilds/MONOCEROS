@@ -6,7 +6,11 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "bcryptjs", "nodemailer"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "12mb",
+      // Vercel rejects any request body over 4.5MB at the edge, before the
+      // action runs, so a higher value here buys nothing — it only moves the
+      // failure somewhere it cannot be caught and explained. Held just under
+      // the platform ceiling so oversized uploads fail as validation instead.
+      bodySizeLimit: "4mb",
     },
   },
   async headers() {

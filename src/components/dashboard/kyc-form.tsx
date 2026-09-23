@@ -10,6 +10,7 @@ import { InfoNote } from "@/components/ui/feedback";
 import { submitKycAction } from "@/server/actions/account";
 import { idleState } from "@/lib/action-state";
 import { ID_DOCUMENT_LABELS } from "@/lib/validation/platform";
+import { compressImage, formatBytes, replaceInputFile } from "@/lib/client/compress-image";
 
 export function KycForm({
   allowedIdTypes,
@@ -22,24 +23,45 @@ export function KycForm({
 }) {
   const [state, formAction] = useActionState(submitKycAction, idleState);
   const [fileName, setFileName] = React.useState<string | null>(null);
+  const [fileNote, setFileNote] = React.useState<string | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
+  const [preparing, setPreparing] = React.useState(false);
   const error = (name: string) => state.fieldErrors?.[name];
 
-  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const input = event.target;
+    const original = input.files?.[0];
     setFileError(null);
+    setFileNote(null);
 
-    if (!file) {
+    if (!original) {
       setFileName(null);
       return;
     }
-    if (file.size > maxUploadMb * 1024 * 1024) {
-      setFileError(`That file is larger than ${maxUploadMb}MB.`);
+
+    setPreparing(true);
+    // Phone photos routinely exceed the upload ceiling, so they are resized
+    // here rather than being rejected back to someone standing with a phone
+    // and no way to shrink a file.
+    const prepared = await compressImage(original);
+    if (prepared !== original) replaceInputFile(input, prepared);
+    setPreparing(false);
+
+    if (prepared.size > maxUploadMb * 1024 * 1024) {
+      setFileError(
+        `That file is ${formatBytes(prepared.size)}, over the ${maxUploadMb}MB limit. A photograph usually works better than a scan or PDF.`,
+      );
       setFileName(null);
-      event.target.value = "";
+      input.value = "";
       return;
     }
-    setFileName(file.name);
+
+    setFileName(prepared.name);
+    setFileNote(
+      prepared === original
+        ? formatBytes(prepared.size)
+        : `${formatBytes(prepared.size)} · resized for upload`,
+    );
   }
 
   return (
@@ -88,18 +110,25 @@ export function KycForm({
         label="Upload your document"
         htmlFor="document"
         required
-        hint={`JPG, PNG or PDF, up to ${maxUploadMb}MB. Make sure every corner is visible and the text is readable.`}
+        hint={`JPG, PNG or PDF. Photographs are resized automatically, so a picture straight from your phone is fine — just make sure every corner is visible and the text is readable. PDFs must be under ${maxUploadMb}MB.`}
         error={fileError ?? error("document")}
       >
         <label
           htmlFor="document"
           className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-ink-600 bg-ink-900/50 px-4 py-8 text-center transition-colors hover:border-accent-700 hover:bg-ink-880/60"
         >
-          {fileName ? (
+          {preparing ? (
+            <>
+              <Upload className="size-6 animate-pulse text-fg-subtle" aria-hidden />
+              <span className="text-[13px] font-medium text-fg">Preparing your document…</span>
+            </>
+          ) : fileName ? (
             <>
               <FileCheck2 className="size-6 text-accent-400" aria-hidden />
               <span className="text-[13px] font-medium text-fg">{fileName}</span>
-              <span className="text-[12px] text-fg-subtle">Choose a different file</span>
+              <span className="text-[12px] text-fg-subtle">
+                {fileNote ? `${fileNote} · ` : null}Choose a different file
+              </span>
             </>
           ) : (
             <>

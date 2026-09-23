@@ -114,7 +114,9 @@ export const SETTING_DEFAULTS = {
   ] as string[],
   "kyc.minimumAge": 18,
   "kyc.country": "Nigeria",
-  "kyc.maxUploadMb": 8,
+  // Must stay under the 4.5MB request body limit Vercel enforces at the edge.
+  // Above it the upload dies before any of this code runs.
+  "kyc.maxUploadMb": 4,
   "kyc.notice":
     "Identity verification is required under anti-money-laundering rules and protects your account from impersonation. Your documents are stored privately and are only accessible to authorised compliance staff.",
 
@@ -264,7 +266,12 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
   "kyc.allowedIdTypes": { group: "kyc", label: "Accepted identity documents" },
   "kyc.minimumAge": { group: "kyc", label: "Minimum age" },
   "kyc.country": { group: "kyc", label: "Accepted country" },
-  "kyc.maxUploadMb": { group: "kyc", label: "Maximum upload size (MB)" },
+  "kyc.maxUploadMb": {
+    group: "kyc",
+    label: "Maximum upload size (MB)",
+    description:
+      "Do not raise above 4. Vercel rejects requests over 4.5MB before they reach the site, and the investor sees a generic error page rather than a useful message. Photographs are resized in the browser, so this only limits PDFs.",
+  },
   "kyc.notice": { group: "kyc", label: "Verification notice shown to users" },
   "notify.emailEnabled": { group: "notifications", label: "Email notifications enabled" },
   "notify.dashboardEnabled": { group: "notifications", label: "In-app notifications enabled" },

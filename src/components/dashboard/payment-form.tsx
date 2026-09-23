@@ -10,6 +10,7 @@ import { InfoNote } from "@/components/ui/feedback";
 import { Button } from "@/components/ui/button";
 import { submitPaymentAction } from "@/server/actions/investing";
 import { idleState } from "@/lib/action-state";
+import { compressImage, formatBytes, replaceInputFile } from "@/lib/client/compress-image";
 
 export function PaymentSubmissionForm({
   investmentId,
@@ -99,7 +100,7 @@ export function PaymentSubmissionForm({
       <Field
         label="Proof of payment"
         htmlFor="proof"
-        hint={`Optional. A screenshot or receipt, up to ${maxUploadMb}MB.`}
+        hint={`Optional. A screenshot or receipt — images are resized automatically. PDFs must be under ${maxUploadMb}MB.`}
         error={fileError}
       >
         <label
@@ -120,16 +121,25 @@ export function PaymentSubmissionForm({
             type="file"
             accept="image/jpeg,image/png,application/pdf"
             className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
+            onChange={async (event) => {
+              const input = event.target;
+              const original = input.files?.[0];
               setFileError(null);
-              if (!file) return setFileName(null);
-              if (file.size > maxUploadMb * 1024 * 1024) {
-                setFileError(`That file is larger than ${maxUploadMb}MB.`);
-                event.target.value = "";
+              if (!original) return setFileName(null);
+
+              // Same ceiling as identity documents: a screenshot straight from
+              // a phone is often past the platform's request limit.
+              const prepared = await compressImage(original);
+              if (prepared !== original) replaceInputFile(input, prepared);
+
+              if (prepared.size > maxUploadMb * 1024 * 1024) {
+                setFileError(
+                  `That file is ${formatBytes(prepared.size)}, over the ${maxUploadMb}MB limit.`,
+                );
+                input.value = "";
                 return setFileName(null);
               }
-              setFileName(file.name);
+              setFileName(prepared.name);
             }}
           />
         </label>
