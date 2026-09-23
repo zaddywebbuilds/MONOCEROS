@@ -11,6 +11,7 @@ import {
   decideReferralPayoutAction,
 } from "@/server/actions/referrals";
 import { idleState } from "@/lib/action-state";
+import { appUrl } from "@/lib/env";
 
 /**
  * Approve, mark paid, or decline a payout.
@@ -102,7 +103,15 @@ export function ReferralCodeForm({
       {code ? (
         <>
           <p className="break-all text-[12.5px] text-fg-muted">
-            Referral link: <span className="font-mono text-fg">/r/{code}</span>
+            Referral link:{" "}
+            <a
+              href={`${appUrl}/r/${code}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all font-mono text-accent-300 underline underline-offset-2"
+            >
+              {appUrl}/r/{code}
+            </a>
           </p>
 
           <Field label="Action" htmlFor={`code-action-${userId}`}>
