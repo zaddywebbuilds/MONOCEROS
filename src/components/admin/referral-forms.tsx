@@ -184,6 +184,20 @@ export function SetReferrerForm({
       <FormError>{state.status === "error" ? state.message : null}</FormError>
       <FormSuccess>{state.status === "success" ? state.message : null}</FormSuccess>
 
+      {currentCode ? (
+        <p className="break-all text-[12.5px] text-fg-muted">
+          Referred via:{" "}
+          <a
+            href={`${appUrl}/r/${currentCode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all font-mono text-accent-300 underline underline-offset-2"
+          >
+            {appUrl}/r/{currentCode}
+          </a>
+        </p>
+      ) : null}
+
       <Field
         label="Referrer's code"
         htmlFor={`referrer-${userId}`}
