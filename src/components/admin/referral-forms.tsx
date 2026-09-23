@@ -97,13 +97,17 @@ export function ReferralCodeForm({
       <input type="hidden" name="userId" value={userId} />
       {code ? null : <input type="hidden" name="action" value="ISSUE" />}
 
+      <h3 className="text-[13px] font-semibold text-fg">This account&rsquo;s own referral link</h3>
+      <p className="-mt-1.5 text-[11.5px] text-fg-subtle">
+        The link they share to introduce other people.
+      </p>
+
       <FormError>{state.status === "error" ? state.message : null}</FormError>
       <FormSuccess>{state.status === "success" ? state.message : null}</FormSuccess>
 
       {code ? (
         <>
           <p className="break-all text-[12.5px] text-fg-muted">
-            Referral link:{" "}
             <a
               href={`${appUrl}/r/${code}`}
               target="_blank"
@@ -171,9 +175,11 @@ export function ReferralCodeForm({
 export function SetReferrerForm({
   userId,
   currentCode,
+  referrerName,
 }: {
   userId: string;
   currentCode: string | null;
+  referrerName?: string | null;
 }) {
   const [state, formAction] = useActionState(setReferrerAction, idleState);
 
@@ -181,22 +187,27 @@ export function SetReferrerForm({
     <form action={formAction} className="space-y-3" noValidate>
       <input type="hidden" name="userId" value={userId} />
 
+      {/* Named as a person rather than shown as a bare link. The two halves of
+          this card were previously two near-identical URLs, and the referrer's
+          link was read as this account's own link having been generated wrongly. */}
+      <h3 className="text-[13px] font-semibold text-fg">Who introduced this account</h3>
+      <p className="-mt-1.5 text-[11.5px] text-fg-subtle">
+        Someone else&rsquo;s link, used when this account registered. It earns commission for
+        them, not for this account.
+      </p>
+
       <FormError>{state.status === "error" ? state.message : null}</FormError>
       <FormSuccess>{state.status === "success" ? state.message : null}</FormSuccess>
 
       {currentCode ? (
-        <p className="break-all text-[12.5px] text-fg-muted">
-          Referred via:{" "}
-          <a
-            href={`${appUrl}/r/${currentCode}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="break-all font-mono text-accent-300 underline underline-offset-2"
-          >
-            {appUrl}/r/{currentCode}
-          </a>
+        <p className="text-[12.5px] text-fg-muted">
+          Introduced by{" "}
+          <span className="font-semibold text-fg">{referrerName ?? currentCode}</span>{" "}
+          <span className="break-all font-mono text-[11.5px] text-fg-subtle">({currentCode})</span>
         </p>
-      ) : null}
+      ) : (
+        <p className="text-[12.5px] text-fg-muted">Nobody. This account registered directly.</p>
+      )}
 
       <Field
         label="Referrer's code"

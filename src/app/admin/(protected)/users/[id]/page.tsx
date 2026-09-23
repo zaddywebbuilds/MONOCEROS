@@ -51,7 +51,13 @@ export default async function AdminUserDetailPage({
       kycSubmissions: { orderBy: { submittedAt: "desc" }, take: 5 },
       loginEvents: { orderBy: { createdAt: "desc" }, take: 10 },
       walletChanges: { orderBy: { createdAt: "desc" }, take: 5 },
-      referredBy: { select: { referralCode: true, email: true } },
+      referredBy: {
+        select: {
+          referralCode: true,
+          email: true,
+          profile: { select: { firstName: true, surname: true } },
+        },
+      },
     },
   });
 
@@ -242,7 +248,17 @@ export default async function AdminUserDetailPage({
             <Card className="space-y-5 p-5">
               <ReferralCodeForm userId={user.id} code={user.referralCode} />
               <div className="border-t border-ink-700/60 pt-5">
-                <SetReferrerForm userId={user.id} currentCode={user.referredBy?.referralCode ?? null} />
+                <SetReferrerForm
+                  userId={user.id}
+                  currentCode={user.referredBy?.referralCode ?? null}
+                  referrerName={
+                    user.referredBy
+                      ? (user.referredBy.profile
+                          ? `${user.referredBy.profile.firstName} ${user.referredBy.profile.surname}`
+                          : user.referredBy.email)
+                      : null
+                  }
+                />
               </div>
             </Card>
           </Section>
