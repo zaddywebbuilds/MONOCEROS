@@ -102,6 +102,28 @@ enum TransactionType {
   REFERRAL_PAYOUT_PAID
 }
 
+enum PaymentSource {
+  /// Paid on chain by the investor and checkable against the blockchain.
+  ONCHAIN
+  /// Recorded by an administrator for funds that arrived some other way.
+  /// Exempt from automatic checking, because there is nothing to check.
+  MANUAL
+}
+
+enum PaymentVerification {
+  UNCHECKED
+  VERIFIED
+  WRONG_RECIPIENT
+  WRONG_ASSET
+  AMOUNT_SHORT
+  TOO_OLD
+  FAILED_ON_CHAIN
+  NOT_FOUND
+  UNSUPPORTED_NETWORK
+  UNAVAILABLE
+  EXEMPT
+}
+
 enum ReferralEarningStatus {
   PENDING
   PAYABLE
@@ -496,25 +518,31 @@ model InvestmentStatusEvent {
 // ---------------------------------------------------------------------------
 
 model Payment {
-  id              String        @id @default(cuid())
-  reference       String        @unique
+  id              String   @id @default(cuid())
+  reference       String   @unique
   userId          String
   investmentId    String
-  asset           String        @default("USDT")
+  asset           String   @default("USDT")
   network         String
   walletAddress   String
-  expectedAmount  Decimal       @db.Decimal(18, 6)
-  submittedAmount Decimal?      @db.Decimal(18, 6)
-  transactionHash String?       @unique
+  expectedAmount  Decimal  @db.Decimal(18, 6)
+  submittedAmount Decimal? @db.Decimal(18, 6)
+  transactionHash String?  @unique
   proofKey        String?
   proofMime       String?
-  status          PaymentStatus @default(PENDING)
-  submittedAt     DateTime?
-  reviewedById    String?
-  reviewedAt      DateTime?
-  approvedById    String?
-  approvedAt      DateTime?
-  rejectionReason String?
+
+  source             PaymentSource       @default(ONCHAIN)
+  verification       PaymentVerification @default(UNCHECKED)
+  verificationDetail String?
+  verifiedAt         DateTime?
+  onChainAmount      Decimal?            @db.Decimal(18, 6)
+  status             PaymentStatus       @default(PENDING)
+  submittedAt        DateTime?
+  reviewedById       String?
+  reviewedAt         DateTime?
+  approvedById       String?
+  approvedAt         DateTime?
+  rejectionReason    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

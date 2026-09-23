@@ -68,6 +68,15 @@ export const SETTING_DEFAULTS = {
   "referral.terms":
     "You earn a commission when someone who joined through your link reaches maturity on an investment. Commission is calculated on their profit, not on the amount they invested.",
 
+  /**
+   * Check submitted payments against the blockchain, and approve the ones that
+   * pass without waiting for a human. Anything that fails is held with the
+   * reason attached — never auto-rejected, because a provider outage must not
+   * look like a bad payment.
+   */
+  "payment.verifyOnChain": true,
+  "payment.autoApproveVerified": true,
+
   "payment.minConfirmations": 1,
   "payment.allowedNetworks": ["TRC20", "ERC20", "BEP20", "POLYGON", "SOLANA"] as string[],
 
@@ -209,6 +218,17 @@ export const SETTING_META: Record<SettingKey, { group: string; label: string; de
     description: "Commission is still earned without it; only cashing out is held.",
   },
   "referral.terms": { group: "referrals", label: "Referral terms shown to users" },
+  "payment.verifyOnChain": {
+    group: "payments",
+    label: "Check payments against the blockchain",
+    description: "Looks up each submitted transaction hash and records what it finds.",
+  },
+  "payment.autoApproveVerified": {
+    group: "payments",
+    label: "Approve verified payments automatically",
+    description:
+      "Only payments that arrived in the company wallet, for the right amount, recently. Everything else waits for you.",
+  },
   "payment.minConfirmations": { group: "payments", label: "Minimum confirmations" },
   "payment.allowedNetworks": { group: "payments", label: "Selectable networks" },
   "cycle.weekday": { group: "investments", label: "Cycle weekday", description: "0 = Sunday … 6 = Saturday" },

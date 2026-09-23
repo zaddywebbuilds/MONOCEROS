@@ -25,6 +25,7 @@ export const AUDIT_ACTION = {
   PAYMENT_APPROVED: "payment.approved",
   PAYMENT_REJECTED: "payment.rejected",
   PAYMENT_REVIEW_STARTED: "payment.review_started",
+  PAYMENT_CHECKED_ON_CHAIN: "payment.checked_on_chain",
   INVESTMENT_ACTIVATED: "investment.activated",
   INVESTMENT_MATURED: "investment.matured",
   INVESTMENT_CORRECTED: "investment.corrected",

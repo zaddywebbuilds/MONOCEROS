@@ -20,6 +20,7 @@ import { formatAsset, formatUSD } from "@/lib/money";
 import { signDocumentUrl } from "@/lib/storage/signed-url";
 import { formatBusinessDateTime, formatCycleLabel, nextCycleStart } from "@/lib/time";
 import { cycleConfig } from "@/server/services/cycles";
+import { explorerUrl } from "@/server/services/chain";
 import {
   INVESTMENT_STATUS_LABEL,
   INVESTMENT_STATUS_TONE,
@@ -28,6 +29,21 @@ import {
   PAYMENT_STATUS_LABEL,
   PAYMENT_STATUS_TONE,
 } from "@/lib/domain/investment-status";
+import type { PaymentVerification } from "@prisma/client";
+
+const VERIFICATION_LABEL: Record<PaymentVerification, string> = {
+  UNCHECKED: "Not checked yet",
+  VERIFIED: "Verified on chain",
+  WRONG_RECIPIENT: "Wrong recipient",
+  WRONG_ASSET: "Wrong asset / token",
+  AMOUNT_SHORT: "Amount short",
+  TOO_OLD: "Transfer too old",
+  FAILED_ON_CHAIN: "Failed on chain",
+  NOT_FOUND: "Not found on chain",
+  UNSUPPORTED_NETWORK: "Network not supported",
+  UNAVAILABLE: "Blockchain unavailable",
+  EXEMPT: "Manually exempt",
+};
 
 export const metadata: Metadata = { title: "Review payment" };
 
@@ -52,6 +68,10 @@ export default async function AdminPaymentDetailPage({
   const config = await cycleConfig();
   // Approving now would place the subscription in this cycle.
   const prospectiveCycle = formatCycleLabel(nextCycleStart(new Date(), config));
+
+  const explorer = payment.transactionHash
+    ? explorerUrl(payment.network, payment.transactionHash)
+    : null;
 
   const proofUrl = payment.proofKey
     ? signDocumentUrl({ key: payment.proofKey, viewerId: admin.id })
@@ -115,12 +135,59 @@ export default async function AdminPaymentDetailPage({
                   </code>
                   <CopyButton value={payment.transactionHash} label="Copy" />
                 </div>
-                <p className="mt-2 text-[11.5px] text-fg-subtle">
-                  Verify this hash on the block explorer for the {payment.network || "stated"}{" "}
-                  network before approving. The platform does not read the blockchain.
-                </p>
+                {explorer ? (
+                  <a
+                    href={explorer}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-300 underline underline-offset-2"
+                  >
+                    View on the block explorer
+                  </a>
+                ) : (
+                  <p className="mt-2 text-[11.5px] text-fg-subtle">
+                    No explorer is known for the {payment.network || "stated"} network.
+                  </p>
+                )}
               </div>
             ) : null}
+
+            {/* What the blockchain actually said, so approval is not a guess. */}
+            <div
+              className={`mt-5 rounded-xl border p-4 ${
+                payment.verification === "VERIFIED"
+                  ? "border-emerald-800/60 bg-emerald-950/20"
+                  : payment.verification === "UNCHECKED" ||
+                      payment.verification === "EXEMPT" ||
+                      payment.verification === "UNAVAILABLE" ||
+                      payment.verification === "UNSUPPORTED_NETWORK"
+                    ? "border-ink-600 bg-ink-850/70"
+                    : "border-red-900/60 bg-red-950/20"
+              }`}
+            >
+              <p className="text-[11px] uppercase tracking-[0.14em] text-fg-subtle">
+                Blockchain check
+              </p>
+              <p className="mt-1.5 text-[13.5px] font-semibold text-fg">
+                {VERIFICATION_LABEL[payment.verification]}
+              </p>
+              {payment.verificationDetail ? (
+                <p className="mt-1 text-[12.5px] leading-relaxed text-fg-muted">
+                  {payment.verificationDetail}
+                </p>
+              ) : null}
+              {payment.onChainAmount ? (
+                <p className="mt-1 text-[12px] text-fg-subtle">
+                  Amount found on chain: {formatAsset(payment.onChainAmount, payment.asset)}
+                </p>
+              ) : null}
+              {payment.verification !== "VERIFIED" ? (
+                <p className="mt-2 text-[11.5px] leading-relaxed text-fg-subtle">
+                  Nothing is rejected automatically. Check the explorer yourself before deciding:
+                  the funds must have reached the company wallet, for the right amount, recently.
+                </p>
+              ) : null}
+            </div>
 
             {proofUrl ? (
               <a

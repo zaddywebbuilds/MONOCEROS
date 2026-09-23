@@ -19,13 +19,20 @@ import { alertStaffOfPayment, transition } from "@/server/services/investments";
 import { BusinessRuleError } from "@/lib/errors";
 import { buildDocumentKey, sniffMime, storage } from "@/lib/storage";
 import { getSettings } from "@/lib/settings";
+import { verifyDeposit, type VerificationVerdict } from "@/server/services/chain";
 
 /**
  * USDT payment submission and manual verification.
  *
- * The platform never takes custody of funds and never claims to observe a
- * blockchain. A payment becomes APPROVED only when a human administrator says
- * so, and that decision is audited.
+ * The platform never takes custody of funds. A submitted payment is checked
+ * against the public blockchain: did this amount actually arrive in OUR wallet,
+ * recently, on the network claimed? Only a payment that passes every part of
+ * that question can be approved without a person, and every approval is
+ * audited either way.
+ *
+ * Nothing here ever auto-REJECTS. A provider outage, an unsupported network or
+ * a hash that has not propagated yet all look identical to a fake from the
+ * outside, and refusing somebody who really paid is the worse error.
  */
 
 export interface SubmitPaymentInput {
@@ -144,7 +151,70 @@ export async function submitPayment(input: SubmitPaymentInput): Promise<{ refere
     packageName: investment.packageNameSnapshot,
   });
 
+  // Deliberately after the transaction has committed: this makes a network
+  // call, and holding a database transaction open across one is how you end up
+  // timing out on somebody else's outage.
+  await checkPaymentAgainstChain(payment.id);
+
   return { reference: payment.reference };
+}
+
+/**
+ * Looks a submitted payment up on chain and records what was found, approving
+ * it when everything matches and the owner has that switched on.
+ *
+ * Safe to call more than once. Already-approved payments are left alone.
+ */
+export async function checkPaymentAgainstChain(paymentId: string): Promise<VerificationVerdict | null> {
+  const settings = await getSettings();
+  if (!settings["payment.verifyOnChain"]) return null;
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    include: { investment: true },
+  });
+
+  if (!payment || !payment.transactionHash) return null;
+  if (payment.source === "MANUAL") return null;
+  if (!["SUBMITTED", "UNDER_REVIEW"].includes(payment.status)) return null;
+
+  const result = await verifyDeposit({
+    network: payment.network,
+    transactionHash: payment.transactionHash,
+    expectedAmount: payment.expectedAmount.toString(),
+    walletAddress: payment.walletAddress,
+  });
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      verification: result.verdict,
+      verificationDetail: result.detail,
+      verifiedAt: new Date(),
+      onChainAmount: result.amount ? money(result.amount) : null,
+    },
+  });
+
+  await writeAudit({
+    actor: null,
+    action: AUDIT_ACTION.PAYMENT_CHECKED_ON_CHAIN,
+    entityType: "Payment",
+    entityId: payment.id,
+    newValue: {
+      verdict: result.verdict,
+      amount: result.amount ?? null,
+      occurredAt: result.occurredAt?.toISOString() ?? null,
+    },
+    reason: result.detail,
+  });
+
+  if (result.verdict === "VERIFIED" && settings["payment.autoApproveVerified"]) {
+    await approvePayment(payment.id, null, {
+      reason: `Verified on chain: ${result.detail}`,
+    });
+  }
+
+  return result.verdict;
 }
 
 // ---------------------------------------------------------------------------
@@ -179,9 +249,18 @@ export async function markPaymentUnderReview(paymentId: string, admin: SessionUs
   });
 }
 
+/**
+ * Approves a payment and queues the investment for the next cycle.
+ *
+ * `admin` is null when the chain check approved it. The distinction is kept
+ * all the way into the audit log rather than attributing machine decisions to
+ * whichever person happened to be signed in: "who approved this" must stay
+ * answerable years later.
+ */
 export async function approvePayment(
   paymentId: string,
-  admin: SessionUser,
+  admin: SessionUser | null,
+  options: { reason?: string } = {},
 ): Promise<{ reference: string; cycleLabel: string }> {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
@@ -206,15 +285,15 @@ export async function approvePayment(
       where: { id: payment.id },
       data: {
         status: "APPROVED",
-        approvedById: admin.id,
+        approvedById: admin?.id ?? null,
         approvedAt,
         rejectionReason: null,
       },
     });
 
     await transition(payment.investment, "QUEUED", tx, {
-      reason: `Payment approved; queued for cycle ${cycle.reference}`,
-      actorId: admin.id,
+      reason: options.reason ?? `Payment approved; queued for cycle ${cycle.reference}`,
+      actorId: admin?.id ?? null,
       data: { cycle: { connect: { id: cycle.id } }, queuedAt: approvedAt },
     });
 
@@ -225,7 +304,7 @@ export async function approvePayment(
         type: "DEPOSIT_APPROVED",
         amount: payment.submittedAmount ?? payment.expectedAmount,
         description: `Payment ${payment.reference} verified`,
-        metadata: { cycle: cycle.reference, approvedBy: admin.email },
+        metadata: { cycle: cycle.reference, approvedBy: admin?.email ?? "on-chain verification" },
       },
       tx,
     );
@@ -251,7 +330,9 @@ export async function approvePayment(
           investmentStatus: "QUEUED",
           cycle: cycle.reference,
           cycleStart: cycle.cycleStart.toISOString(),
+          approvedAutomatically: !admin,
         },
+        reason: options.reason,
       },
       tx,
     );
