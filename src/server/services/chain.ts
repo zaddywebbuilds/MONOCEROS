@@ -22,8 +22,14 @@ import { tronAddressToHex } from "@/lib/base58";
 /** ERC-20/TRC-20 `transfer(address,uint256)`. */
 const TRANSFER_SELECTOR = "a9059cbb";
 
-/** USDT contracts. Wrong-contract transfers are not payments to us. */
-const USDT_BEP20 = "0x55d398326f99059ff775485246999027b3197955";
+/** Accepted stablecoin contracts on BNB Smart Chain. */
+const ACCEPTED_BEP20 = new Set([
+  "0x55d398326f99059ff775485246999027b3197955", // USDT (Tether)
+  "0xe9e7cea3dedca5984780bafc599bd69add087d56", // BSC-USD / BUSD (Binance)
+  "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", // USDC
+  "0xc5f0f7b66764f6ec8c8dff7ba683102295e16409", // FDUSD (First Digital)
+]);
+
 const USDT_TRC20_HEX = "a614f803b6fd780986a42c78ec9c7f77e6ded13c"; // TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 
 const BSC_RPC = "https://bsc-dataseed.binance.org";
@@ -135,10 +141,10 @@ async function verifyBep20(
     };
   }
 
-  if ((tx.to ?? "").toLowerCase() !== USDT_BEP20) {
+  if (!ACCEPTED_BEP20.has((tx.to ?? "").toLowerCase())) {
     return {
       verdict: "WRONG_ASSET",
-      detail: "That transaction is not a USDT transfer on BNB Smart Chain.",
+      detail: "That transaction is not a USD stablecoin transfer on BNB Smart Chain.",
     };
   }
 
@@ -195,7 +201,7 @@ async function verifyBep20(
   if (shortfall(transfer.amount, expected, 18)) {
     return {
       verdict: "AMOUNT_SHORT",
-      detail: `Only ${amount} USDT arrived, less than the amount due.`,
+      detail: `Only ${amount} USD arrived, less than the amount due.`,
       amount,
       from,
       occurredAt,
@@ -204,7 +210,7 @@ async function verifyBep20(
 
   return {
     verdict: "VERIFIED",
-    detail: `${amount} USDT received on BNB Smart Chain.`,
+    detail: `${amount} USD received on BNB Smart Chain.`,
     amount,
     from,
     to: input.walletAddress,
