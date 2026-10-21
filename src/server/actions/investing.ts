@@ -175,6 +175,7 @@ export async function createRolloverAction(
       userId: user.id,
       investmentId: parsed.data.investmentId,
       packageSlug: parsed.data.packageSlug,
+      rolloverType: parsed.data.rolloverType,
       walletAddress: parsed.data.walletAddress,
       walletNetwork: parsed.data.walletNetwork,
     });

@@ -13,10 +13,12 @@ import { idleState } from "@/lib/action-state";
 
 interface RolloverPreview {
   mode: string;
-  principal: string;
+  originalPrincipal: string;
+  fullAmount: string;
   profitAmount: string;
   percentage: string;
-  projectedMaturity: string;
+  projectedMaturityFull: string;
+  projectedMaturityPrincipal: string;
   durationDays: number;
   waitsForCycle: boolean;
 }
@@ -265,8 +267,10 @@ function RolloverForm({
   savedNetwork: string | null;
 }) {
   const [state, formAction] = useActionState(createRolloverAction, idleState);
+  const [rolloverType, setRolloverType] = React.useState<"FULL" | "PRINCIPAL_ONLY">("FULL");
   const requiresPackage = preview.mode === "REQUIRE_PACKAGE_SELECTION";
   const hasProfit = parseFloat(preview.profitAmount) > 0;
+  const isPrincipalOnly = rolloverType === "PRINCIPAL_ONLY";
 
   if (state.status === "success") {
     return <FormSuccess>{state.message}</FormSuccess>;
@@ -275,16 +279,51 @@ function RolloverForm({
   return (
     <form action={formAction} className="space-y-4" noValidate>
       <input type="hidden" name="investmentId" value={investmentId} />
+      <input type="hidden" name="rolloverType" value={rolloverType} />
 
       <FormError>{state.status === "error" ? state.message : null}</FormError>
+
+      {hasProfit ? (
+        <div
+          role="radiogroup"
+          aria-label="Rollover type"
+          className="grid grid-cols-2 gap-2"
+        >
+          {(
+            [
+              { value: "FULL", label: "Roll full amount", sub: preview.fullAmount },
+              { value: "PRINCIPAL_ONLY", label: "Roll capital only", sub: `Keep profit ${preview.profitAmount}` },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={rolloverType === opt.value}
+              onClick={() => setRolloverType(opt.value)}
+              className={cn(
+                "rounded-xl border p-3 text-left transition-colors",
+                rolloverType === opt.value
+                  ? "border-accent-400/60 bg-ink-800 text-fg"
+                  : "border-ink-700 bg-ink-900/40 text-fg-muted hover:text-fg",
+              )}
+            >
+              <p className="text-[12.5px] font-semibold">{opt.label}</p>
+              <p className="mt-0.5 text-[11.5px]">{opt.sub}</p>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-ink-700 bg-ink-880/50 p-4">
         <dl className="space-y-2.5">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-[12.5px] text-fg-muted">Capital rolled over (original principal)</dt>
-            <dd className="text-[13px] font-semibold text-fg">{preview.principal}</dd>
+            <dt className="text-[12.5px] text-fg-muted">Capital rolled over</dt>
+            <dd className="text-[13px] font-semibold text-fg">
+              {isPrincipalOnly ? preview.originalPrincipal : preview.fullAmount}
+            </dd>
           </div>
-          {hasProfit ? (
+          {isPrincipalOnly && hasProfit ? (
             <div className="flex items-center justify-between gap-3">
               <dt className="text-[12.5px] text-fg-muted">Profit paid out separately</dt>
               <dd className="text-[13px] font-semibold text-emerald-400">{preview.profitAmount}</dd>
@@ -300,7 +339,9 @@ function RolloverForm({
               </div>
               <div className="flex items-center justify-between gap-3 border-t border-ink-700/60 pt-2.5">
                 <dt className="text-[12.5px] text-fg-muted">Projected maturity value</dt>
-                <dd className="text-[13px] font-semibold text-fg">{preview.projectedMaturity}</dd>
+                <dd className="text-[13px] font-semibold text-fg">
+                  {isPrincipalOnly ? preview.projectedMaturityPrincipal : preview.projectedMaturityFull}
+                </dd>
               </div>
             </>
           ) : null}
@@ -316,7 +357,7 @@ function RolloverForm({
           label="Choose a package for the rollover"
           htmlFor="packageSlug"
           required
-          hint="Your original principal becomes the capital; this package supplies the return percentage."
+          hint="The rolled amount becomes the capital; this package supplies the return percentage."
           error={state.fieldErrors?.packageSlug}
         >
           <Select id="packageSlug" name="packageSlug" required defaultValue="">
@@ -332,7 +373,7 @@ function RolloverForm({
         </Field>
       ) : null}
 
-      {hasProfit ? (
+      {isPrincipalOnly && hasProfit ? (
         <>
           <p className="text-[12.5px] font-medium text-fg">
             Profit withdrawal destination

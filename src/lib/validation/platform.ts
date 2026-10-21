@@ -131,7 +131,9 @@ export const rolloverRequestSchema = z.object({
   investmentId: z.string().min(1),
   /** Only used when the admin rollover mode is REQUIRE_PACKAGE_SELECTION. */
   packageSlug: z.string().max(60).optional(),
-  /** Wallet details for the profit-only withdrawal created alongside the rollover. */
+  /** "FULL" rolls the entire matured amount; "PRINCIPAL_ONLY" rolls the original capital and withdraws the profit. */
+  rolloverType: z.enum(["FULL", "PRINCIPAL_ONLY"]).default("FULL"),
+  /** Wallet details for the profit-only withdrawal (required when rolloverType is PRINCIPAL_ONLY and profit > 0). */
   walletAddress: z.string().max(200).optional(),
   walletNetwork: z.string().max(60).optional(),
 });

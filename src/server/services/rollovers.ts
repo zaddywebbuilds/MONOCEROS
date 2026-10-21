@@ -37,7 +37,9 @@ export interface RolloverInput {
   userId: string;
   investmentId: string;
   packageSlug?: string;
-  /** Wallet details for the profit-only withdrawal. Required when profit > 0. */
+  /** "FULL" rolls the entire matured amount (default); "PRINCIPAL_ONLY" rolls original capital and withdraws profit. */
+  rolloverType?: "FULL" | "PRINCIPAL_ONLY";
+  /** Wallet details for the profit-only withdrawal (required when rolloverType is PRINCIPAL_ONLY and profit > 0). */
   walletAddress?: string;
   walletNetwork?: string;
 }
@@ -61,11 +63,15 @@ export async function createRollover(input: RolloverInput): Promise<{ reference:
     throw new BusinessRuleError("This investment has already been rolled over.");
   }
 
-  // Only the original principal rolls forward; profit is paid out separately.
-  const principal = money(source.principalAmount);
-  const profit = money(source.maturityAmount).minus(principal);
+  const principalOnly = input.rolloverType === "PRINCIPAL_ONLY";
+  const principal = principalOnly
+    ? money(source.principalAmount)
+    : money(source.maturityAmount);
+  const profit = principalOnly
+    ? money(source.maturityAmount).minus(money(source.principalAmount))
+    : money(0);
 
-  if (profit.greaterThan(0) && !input.walletAddress) {
+  if (principalOnly && profit.greaterThan(0) && !input.walletAddress) {
     throw new BusinessRuleError(
       "Please provide a wallet address to receive your profit payout.",
     );
@@ -262,18 +268,21 @@ export async function previewRollover(userId: string, investmentId: string) {
   });
   if (!source) return null;
 
-  const principal = money(source.principalAmount);
-  const profit = money(source.maturityAmount).minus(principal);
+  const originalPrincipal = money(source.principalAmount);
+  const fullAmount = money(source.maturityAmount);
+  const profit = fullAmount.minus(originalPrincipal);
   const percentage = money(source.returnPercentageSnapshot);
 
   return {
     mode,
     sourceReference: source.reference,
     packageName: source.packageNameSnapshot,
-    principal: principal.toFixed(2),
+    originalPrincipal: originalPrincipal.toFixed(2),
+    fullAmount: fullAmount.toFixed(2),
     profitAmount: profit.toFixed(2),
     percentage: percentage.toString(),
-    projectedMaturity: applyReturn(principal, percentage).toFixed(2),
+    projectedMaturityFull: applyReturn(fullAmount, percentage).toFixed(2),
+    projectedMaturityPrincipal: applyReturn(originalPrincipal, percentage).toFixed(2),
     durationDays: source.durationDays,
     waitsForCycle: settings["rollover.waitsForCycle"],
   };

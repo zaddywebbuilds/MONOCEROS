@@ -203,10 +203,12 @@ export default async function InvestmentDetailPage({
                   requirePassword={settings["withdrawal.requirePasswordConfirmation"]}
                   rollover={{
                     mode: rolloverPreview.mode,
-                    principal: formatUSD(rolloverPreview.principal),
+                    originalPrincipal: formatUSD(rolloverPreview.originalPrincipal),
+                    fullAmount: formatUSD(rolloverPreview.fullAmount),
                     profitAmount: formatUSD(rolloverPreview.profitAmount),
                     percentage: rolloverPreview.percentage,
-                    projectedMaturity: formatUSD(rolloverPreview.projectedMaturity),
+                    projectedMaturityFull: formatUSD(rolloverPreview.projectedMaturityFull),
+                    projectedMaturityPrincipal: formatUSD(rolloverPreview.projectedMaturityPrincipal),
                     durationDays: rolloverPreview.durationDays,
                     waitsForCycle: rolloverPreview.waitsForCycle,
                   }}
