@@ -147,7 +147,7 @@ export default async function AdminUsersPage({
                     <TD className="text-fg">
                       {user.profile
                         ? `${user.profile.firstName} ${user.profile.surname}`
-                        : "—"}
+                        : <span className="italic text-fg-subtle">{user.email}</span>}
                       <span className="mt-0.5 block font-mono text-[10.5px] text-fg-subtle">
                         {user.reference}
                       </span>

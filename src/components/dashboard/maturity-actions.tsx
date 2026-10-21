@@ -14,6 +14,7 @@ import { idleState } from "@/lib/action-state";
 interface RolloverPreview {
   mode: string;
   principal: string;
+  profitAmount: string;
   percentage: string;
   projectedMaturity: string;
   durationDays: number;
@@ -109,6 +110,9 @@ export function MaturityActions({
           preview={rollover}
           packages={packages}
           cycleLabel={cycleLabel}
+          networks={networks}
+          savedWallet={savedWallet}
+          savedNetwork={savedNetwork}
         />
       </div>
     </div>
@@ -248,14 +252,21 @@ function RolloverForm({
   preview,
   packages,
   cycleLabel,
+  networks,
+  savedWallet,
+  savedNetwork,
 }: {
   investmentId: string;
   preview: RolloverPreview;
   packages: { slug: string; name: string; returnPercentage: string }[];
   cycleLabel: string;
+  networks: string[];
+  savedWallet: string | null;
+  savedNetwork: string | null;
 }) {
   const [state, formAction] = useActionState(createRolloverAction, idleState);
   const requiresPackage = preview.mode === "REQUIRE_PACKAGE_SELECTION";
+  const hasProfit = parseFloat(preview.profitAmount) > 0;
 
   if (state.status === "success") {
     return <FormSuccess>{state.message}</FormSuccess>;
@@ -270,9 +281,15 @@ function RolloverForm({
       <div className="rounded-xl border border-ink-700 bg-ink-880/50 p-4">
         <dl className="space-y-2.5">
           <div className="flex items-center justify-between gap-3">
-            <dt className="text-[12.5px] text-fg-muted">New capital (full matured amount)</dt>
+            <dt className="text-[12.5px] text-fg-muted">Capital rolled over (original principal)</dt>
             <dd className="text-[13px] font-semibold text-fg">{preview.principal}</dd>
           </div>
+          {hasProfit ? (
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-[12.5px] text-fg-muted">Profit paid out separately</dt>
+              <dd className="text-[13px] font-semibold text-emerald-400">{preview.profitAmount}</dd>
+            </div>
+          ) : null}
           {!requiresPackage ? (
             <>
               <div className="flex items-center justify-between gap-3">
@@ -299,7 +316,7 @@ function RolloverForm({
           label="Choose a package for the rollover"
           htmlFor="packageSlug"
           required
-          hint="Your full matured amount becomes the capital; this package supplies the return percentage."
+          hint="Your original principal becomes the capital; this package supplies the return percentage."
           error={state.fieldErrors?.packageSlug}
         >
           <Select id="packageSlug" name="packageSlug" required defaultValue="">
@@ -315,6 +332,46 @@ function RolloverForm({
         </Field>
       ) : null}
 
+      {hasProfit ? (
+        <>
+          <p className="text-[12.5px] font-medium text-fg">
+            Profit withdrawal destination
+          </p>
+          <Field label="Network" htmlFor="rolloverWalletNetwork" required error={state.fieldErrors?.walletNetwork}>
+            <Select
+              id="rolloverWalletNetwork"
+              name="walletNetwork"
+              defaultValue={savedNetwork ?? networks[0]}
+              required
+            >
+              {networks.map((network) => (
+                <option key={network} value={network}>
+                  {network}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field
+            label="Destination wallet address"
+            htmlFor="rolloverWalletAddress"
+            required
+            hint="Your profit will be sent here. Check carefully — transfers cannot be reversed."
+            error={state.fieldErrors?.walletAddress}
+          >
+            <Input
+              id="rolloverWalletAddress"
+              name="walletAddress"
+              defaultValue={savedWallet ?? ""}
+              spellCheck={false}
+              autoComplete="off"
+              className="font-mono text-[12.5px]"
+              required
+              aria-invalid={Boolean(state.fieldErrors?.walletAddress)}
+            />
+          </Field>
+        </>
+      ) : null}
+
       <InfoNote>
         {preview.waitsForCycle
           ? `Your rollover joins the next investment cycle, opening ${cycleLabel}. It does not start immediately.`
@@ -322,7 +379,7 @@ function RolloverForm({
       </InfoNote>
 
       <SubmitButton block pendingLabel="Creating rollover…">
-        Roll over the full amount
+        Roll over my investment
       </SubmitButton>
     </form>
   );

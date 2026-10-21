@@ -7,7 +7,7 @@ import { nextReference } from "@/lib/references";
 import { applyReturn, formatUSD, money } from "@/lib/money";
 import { getSettings } from "@/lib/settings";
 import { formatCycleLabel, maturityFor } from "@/lib/time";
-import { notify, notifications } from "@/lib/notifications";
+import { notify, notifications, notifyStaff } from "@/lib/notifications";
 import { writeAudit, AUDIT_ACTION } from "@/lib/audit";
 import { sendRolloverCreatedEmail } from "@/lib/email";
 import { recordTransaction } from "@/server/services/ledger";
@@ -37,6 +37,9 @@ export interface RolloverInput {
   userId: string;
   investmentId: string;
   packageSlug?: string;
+  /** Wallet details for the profit-only withdrawal. Required when profit > 0. */
+  walletAddress?: string;
+  walletNetwork?: string;
 }
 
 export async function createRollover(input: RolloverInput): Promise<{ reference: string }> {
@@ -58,8 +61,15 @@ export async function createRollover(input: RolloverInput): Promise<{ reference:
     throw new BusinessRuleError("This investment has already been rolled over.");
   }
 
-  // The full matured amount carries forward — this is the defining rule.
-  const principal = money(source.maturityAmount);
+  // Only the original principal rolls forward; profit is paid out separately.
+  const principal = money(source.principalAmount);
+  const profit = money(source.maturityAmount).minus(principal);
+
+  if (profit.greaterThan(0) && !input.walletAddress) {
+    throw new BusinessRuleError(
+      "Please provide a wallet address to receive your profit payout.",
+    );
+  }
 
   let percentage = money(source.returnPercentageSnapshot);
   let packageId = source.packageId;
@@ -158,6 +168,46 @@ export async function createRollover(input: RolloverInput): Promise<{ reference:
       },
     });
 
+    // Create a pending profit withdrawal so the investor is paid out separately.
+    if (profit.greaterThan(0) && input.walletAddress) {
+      const profitWithdrawalRef = await nextReference("withdrawal", tx);
+      await tx.withdrawal.create({
+        data: {
+          reference: profitWithdrawalRef,
+          userId: input.userId,
+          investmentId: source.id,
+          amount: profit,
+          method: "USDT_WALLET",
+          walletAddress: input.walletAddress,
+          walletNetwork: input.walletNetwork ?? null,
+          status: "PENDING",
+        },
+      });
+
+      await recordTransaction(
+        {
+          userId: input.userId,
+          investmentId: source.id,
+          type: "WITHDRAWAL_REQUESTED",
+          status: "PENDING",
+          amount: profit,
+          description: `Profit payout ${profitWithdrawalRef} from rollover of ${source.reference}`,
+          metadata: { network: input.walletNetwork ?? null },
+        },
+        tx,
+      );
+
+      await notifyStaff(
+        {
+          title: "Profit withdrawal pending",
+          message: `${profitWithdrawalRef} for ${formatUSD(profit)} from rollover needs settlement.`,
+          type: "WARNING",
+          link: "/admin/withdrawals",
+        },
+        tx,
+      );
+    }
+
     await recordTransaction(
       {
         userId: input.userId,
@@ -212,7 +262,8 @@ export async function previewRollover(userId: string, investmentId: string) {
   });
   if (!source) return null;
 
-  const principal = money(source.maturityAmount);
+  const principal = money(source.principalAmount);
+  const profit = money(source.maturityAmount).minus(principal);
   const percentage = money(source.returnPercentageSnapshot);
 
   return {
@@ -220,6 +271,7 @@ export async function previewRollover(userId: string, investmentId: string) {
     sourceReference: source.reference,
     packageName: source.packageNameSnapshot,
     principal: principal.toFixed(2),
+    profitAmount: profit.toFixed(2),
     percentage: percentage.toString(),
     projectedMaturity: applyReturn(principal, percentage).toFixed(2),
     durationDays: source.durationDays,

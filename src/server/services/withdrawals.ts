@@ -280,11 +280,15 @@ export async function decideWithdrawal(
     });
 
     if (input.decision === "PAID") {
-      await transition(withdrawal.investment, "COMPLETED", tx, {
-        reason: `Withdrawal ${withdrawal.reference} settled`,
-        actorId: admin.id,
-        data: { closedAt: now },
-      });
+      // Profit-only withdrawals from a rolled-over investment: the source is
+      // already in a terminal state so we skip the COMPLETED transition.
+      if (withdrawal.investment.status === "WITHDRAWAL_REQUESTED") {
+        await transition(withdrawal.investment, "COMPLETED", tx, {
+          reason: `Withdrawal ${withdrawal.reference} settled`,
+          actorId: admin.id,
+          data: { closedAt: now },
+        });
+      }
 
       await recordTransaction(
         {
@@ -302,11 +306,14 @@ export async function decideWithdrawal(
     }
 
     if (input.decision === "REJECT") {
-      // The investment returns to MATURED so the investor can decide again.
-      await transition(withdrawal.investment, "MATURED", tx, {
-        reason: input.reason,
-        actorId: admin.id,
-      });
+      // Only reopen the investment when it's still awaiting the withdrawal.
+      // For profit withdrawals from a rolled-over investment, leave it alone.
+      if (withdrawal.investment.status === "WITHDRAWAL_REQUESTED") {
+        await transition(withdrawal.investment, "MATURED", tx, {
+          reason: input.reason,
+          actorId: admin.id,
+        });
+      }
 
       await recordTransaction(
         {

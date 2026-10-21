@@ -204,6 +204,7 @@ export default async function InvestmentDetailPage({
                   rollover={{
                     mode: rolloverPreview.mode,
                     principal: formatUSD(rolloverPreview.principal),
+                    profitAmount: formatUSD(rolloverPreview.profitAmount),
                     percentage: rolloverPreview.percentage,
                     projectedMaturity: formatUSD(rolloverPreview.projectedMaturity),
                     durationDays: rolloverPreview.durationDays,
