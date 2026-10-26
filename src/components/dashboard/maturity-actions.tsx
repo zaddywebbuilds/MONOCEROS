@@ -16,6 +16,7 @@ interface RolloverPreview {
   originalPrincipal: string;
   fullAmount: string;
   profitAmount: string;
+  hasProfit: boolean;
   percentage: string;
   projectedMaturityFull: string;
   projectedMaturityPrincipal: string;
@@ -269,7 +270,7 @@ function RolloverForm({
   const [state, formAction] = useActionState(createRolloverAction, idleState);
   const [rolloverType, setRolloverType] = React.useState<"FULL" | "PRINCIPAL_ONLY">("FULL");
   const requiresPackage = preview.mode === "REQUIRE_PACKAGE_SELECTION";
-  const hasProfit = parseFloat(preview.profitAmount) > 0;
+  const hasProfit = preview.hasProfit;
   const isPrincipalOnly = rolloverType === "PRINCIPAL_ONLY";
 
   if (state.status === "success") {

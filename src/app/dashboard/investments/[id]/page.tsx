@@ -206,6 +206,7 @@ export default async function InvestmentDetailPage({
                     originalPrincipal: formatUSD(rolloverPreview.originalPrincipal),
                     fullAmount: formatUSD(rolloverPreview.fullAmount),
                     profitAmount: formatUSD(rolloverPreview.profitAmount),
+                    hasProfit: Number(rolloverPreview.profitAmount) > 0,
                     percentage: rolloverPreview.percentage,
                     projectedMaturityFull: formatUSD(rolloverPreview.projectedMaturityFull),
                     projectedMaturityPrincipal: formatUSD(rolloverPreview.projectedMaturityPrincipal),
